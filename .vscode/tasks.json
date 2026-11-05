@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build shop_test",
+      "type": "shell",
+      "command": "g++",
+      "args": [
+        "-g",
+        "test/shop_test.cpp",
+        "src/shop.cpp",
+        "-Iinclude",
+        "-o", "shop_test.exe",
+        "-lfreeglut", "-lopengl32", "-lglu32"
+      ],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$gcc"]
+    }
+  ]
+}
