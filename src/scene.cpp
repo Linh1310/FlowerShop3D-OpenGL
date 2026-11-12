@@ -80,6 +80,44 @@ const float END_MARGIN = 0.30f;
 const float FLOWER_SCALE = 0.98f;
 
 // ========================================
+// TRANG THAI CHON / XOAY / PHONG TO CHAU
+// ========================================
+const int MAX_POTS = 64;
+int   selectedPot = -1;              // -1 = chua chon chau nao
+float potAngle[MAX_POTS] = {0};      // goc xoay them cua tung chau
+float potGrow[MAX_POTS]  = {0};      // do phong to them (0 = binh thuong)
+int   potCounter = 0;                // dem thu tu chau trong luc ve
+
+int totalPots() {
+    int n = 0;
+    for (int i = 0; i < ROW_COUNT; i++) n += ROWS[i].potCount;
+    return n;
+}
+ // Gioi han phong to theo tang ke (tang tren cung it vuong hon)
+float maxGrowFor(int id) {
+    int acc = 0;
+    for (int i = 0; i < ROW_COUNT; i++) {
+        acc += ROWS[i].potCount;
+        if (id < acc) return (ROWS[i].y > 1.4f) ? 0.60f : 0.12f;
+    }
+    return 0.12f;
+}
+// Vong vang duoi day chau dang duoc chon
+void drawSelectionRing() {
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_LINE_BIT);
+    glDisable(GL_LIGHTING);
+    glLineWidth(3.0f);
+    glColor3f(1.0f, 0.85f, 0.1f);
+    glBegin(GL_LINE_LOOP);
+    for (int k = 0; k < 40; k++) {
+        float a = 2.0f * 3.14159265f * k / 40;
+        glVertex3f(0.25f * std::cos(a), 0.02f, 0.25f * std::sin(a));
+    }
+    glEnd();
+    glPopAttrib();
+}
+
+// ========================================
 // 3. HAM TINH TOAN VA VE MOT HANG HOA
 // ========================================
 
@@ -174,6 +212,15 @@ void drawRow(const ShelfRow& row) {
         }
 
         // Ve chau va bong hoa
+                // ---- Chon / xoay / phong to (Trang) ----
+        int id = potCounter++;
+        if (id < MAX_POTS) {
+            glRotatef(potAngle[id], 0, 1, 0);
+            float g = 1.0f + potGrow[id];
+            glScalef(g, g, g);
+        }
+        if (id == selectedPot) drawSelectionRing();
+
         drawFlower(row.type);
 
         // Khoi phuc ma tran
@@ -193,6 +240,8 @@ void drawFlowerScene() {
     if (shopSlotCount() < 12) {
         return;
     }
+
+        potCounter = 0;    // danh so lai chau moi frame
 
     // Ve lan luot tung hang hoa
     for (int i = 0; i < ROW_COUNT; i++) {
@@ -242,4 +291,61 @@ void printFlowerSceneLayout() {
         "TOTAL POTS: %d\n",
         totalPots
     );
+}
+
+// ========================================
+// 6. CHON VA THAO TAC CHAU HOA
+// ========================================
+void sceneSelectPot(int index) {
+    selectedPot = (index >= 0 && index < totalPots()) ? index : -1;
+}
+
+void sceneSelectStep(int dir) {
+    int n = totalPots();
+    if (n <= 0) return;
+    if (selectedPot < 0) selectedPot = (dir > 0) ? 0 : n - 1;
+    else selectedPot = (selectedPot + dir + n) % n;
+}
+
+void sceneRotateSelected(float deg) {
+    if (selectedPot >= 0 && selectedPot < MAX_POTS) potAngle[selectedPot] += deg;
+}
+
+void sceneScaleSelected(float delta) {
+    if (selectedPot < 0 || selectedPot >= MAX_POTS) return;
+    potGrow[selectedPot] += delta;
+    if (potGrow[selectedPot] < -0.4f) potGrow[selectedPot] = -0.4f;
+    if (potGrow[selectedPot] > maxGrowFor(selectedPot)) potGrow[selectedPot] = maxGrowFor(selectedPot);
+}
+
+void sceneResetSelection() {
+    selectedPot = -1;
+    for (int i = 0; i < MAX_POTS; i++) { potAngle[i] = 0; potGrow[i] = 0; }
+}
+
+int sceneSelectedFlowerType() {
+    if (selectedPot < 0) return -1;
+    int acc = 0;
+    for (int i = 0; i < ROW_COUNT; i++) {
+        acc += ROWS[i].potCount;
+        if (selectedPot < acc) return (ROWS[i].type == FlowerType::TULIP) ? 0 : 1;
+    }
+    return -1;
+}
+
+float sceneSelectedAngle() {
+    return (selectedPot >= 0 && selectedPot < MAX_POTS) ? potAngle[selectedPot] : 0.0f;
+}
+
+int sceneSelectedIndex() { return selectedPot; }
+int scenePotCount()      { return totalPots(); }
+
+const char* sceneSelectedName() {
+    if (selectedPot < 0) return "";
+    int acc = 0;
+    for (int i = 0; i < ROW_COUNT; i++) {
+        if (selectedPot < acc + ROWS[i].potCount) return ROWS[i].name;
+        acc += ROWS[i].potCount;
+    }
+    return "";
 }
