@@ -3,15 +3,19 @@ Interactive 3D Flower Shop Simulation using C++ and OpenGL/GLUT | Computer Graph
 
 ## Chạy bản demo soạn đơn trên Windows
 
-Cài GCC và FreeGLUT trong MSYS2 UCRT64, rồi mở terminal MSYS2 UCRT64 tại thư mục dự án.
+Cài GCC và FreeGLUT một lần trong terminal MSYS2 UCRT64.
 
 ```bash
 pacman -S --needed mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-freeglut
-g++ -std=c++17 -Iinclude main.cpp src/bezier.cpp src/camera.cpp src/flowers.cpp src/interaction.cpp src/lighting.cpp src/model3d.cpp src/order.cpp src/people.cpp src/scene.cpp src/shop.cpp src/ui.cpp -o flower_shop.exe -lfreeglut -lopengl32 -lglu32
-./flower_shop.exe
 ```
 
-Trong VS Code, dùng **Ctrl+Shift+B** để build nếu thư mục `C:\msys64\ucrt64\bin` đã nằm trong PATH.
+Sau khi lấy nhánh `feature/flower-shop-wrapping-demo`, mở PowerShell hoặc terminal VS Code tại thư mục chứa mã nguồn và chạy:
+
+```powershell
+.\run_demo.cmd
+```
+
+Script build và mở `flower_shop_wrapping.exe`. Bạn cũng có thể nhấn **Ctrl+Shift+B** trong VS Code để chỉ build. Nếu MSYS2 nằm ngoài `C:\msys64`, dùng terminal UCRT64 hoặc đưa thư mục `ucrt64\bin` vào PATH trước khi chạy.
 
 1. Đọc lời nhắn của khách rồi bấm chuột phải vào hoa trên kệ để thêm. Bạn cũng có thể bấm trái để chọn rồi bấm **Thêm hoa**.
 2. Bấm vào mẫu giấy và cuộn nơ trên bàn hoặc chọn màu tương ứng trên phiếu. Bấm **Gói hoa** khi đã lấy đủ hoa. Giấy sẽ gập lên quanh bó và nhân viên thắt nơ.
