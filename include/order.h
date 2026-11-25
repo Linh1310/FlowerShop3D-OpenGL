@@ -14,6 +14,7 @@ const char* orderMessage();
 void orderAddSelected();
 void orderClear();
 void orderNext();
+void updateOrderDisplay(float elapsed);
 void drawOrderFlowers();
 
 #endif

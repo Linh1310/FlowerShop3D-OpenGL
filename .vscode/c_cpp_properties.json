@@ -3,9 +3,7 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/include",
-                "${workspaceFolder}/lib/freeglut-3.4.0/include"
+                "${workspaceFolder}/include"
             ],
             "defines": [
                 "_DEBUG",

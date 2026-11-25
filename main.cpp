@@ -7,6 +7,19 @@
 #include "scene.h"
 #include "model3d.h"
 #include "order.h"
+#include "people.h"
+
+static int previousFrameTime = 0;
+
+static void animate(int) {
+    const int now = glutGet(GLUT_ELAPSED_TIME);
+    const float elapsed = (now - previousFrameTime) / 1000.0f;
+    previousFrameTime = now;
+    updatePeople(elapsed);
+    updateOrderDisplay(elapsed);
+    if (!inspectActive()) glutPostRedisplay();
+    glutTimerFunc(33, animate, 0);
+}
 
 static void display() {
         if (inspectActive()) glClearColor(0.08f, 0.08f, 0.12f, 1.0f);   // nen toi cho de nhin luoi
@@ -26,6 +39,7 @@ static void display() {
         drawShop();
         drawFlowerScene();
         drawOrderFlowers();
+        drawPeople();
     }
 
     drawUI();
@@ -54,6 +68,8 @@ int main(int argc, char** argv) {
     glutSpecialFunc(onSpecialKey);
     glutMouseFunc(onMouse);
     glutPassiveMotionFunc(onMouseMove);
+    previousFrameTime = glutGet(GLUT_ELAPSED_TIME);
+    glutTimerFunc(33, animate, 0);
     glutMainLoop();
     return 0;
 }

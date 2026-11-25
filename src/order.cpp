@@ -1,13 +1,24 @@
 #include <GL/freeglut.h>
+#include <algorithm>
 #include "flowers.h"
 #include "model3d.h"
 #include "order.h"
+#include "people.h"
 #include "scene.h"
 #include "shop.h"
 
 namespace {
 constexpr FlowerOrder recipes[] = {{2, 1}, {1, 2}, {3, 1}, {2, 2}, {1, 3}};
 constexpr int recipeCount = sizeof recipes / sizeof recipes[0];
+constexpr float tableOffsets[][2] = {
+    {-0.16f, -0.16f}, {0.16f, -0.16f},
+    {-0.16f, 0.15f}, {0.16f, 0.15f}
+};
+struct TablePot {
+    FlowerType type;
+    float landing;
+};
+TablePot tablePots[sizeof tableOffsets / sizeof tableOffsets[0]]{};
 int currentOrder = 1;
 FlowerOrder packed{};
 const char* message = "Chon chau hoa tren ke de bat dau.";
@@ -40,7 +51,11 @@ void orderAddSelected() {
         return;
     }
 
+    tablePots[packed.tulips + packed.daisies] = {
+        tulip ? FlowerType::TULIP : FlowerType::DAISY, 0.0f
+    };
     ++count;
+    staffPackFlower();
     if (orderComplete()) message = "Da soan xong! Bam Don tiep.";
     else message = tulip ? "Da them mot chau tulip." : "Da them mot chau cuc kim.";
 }
@@ -52,26 +67,32 @@ void orderClear() {
 
 void orderNext() {
     if (!orderComplete()) return;
+    customerCollectOrder();
     ++currentOrder;
     packed = {};
     message = "Don moi da san sang.";
 }
 
+void updateOrderDisplay(float elapsed) {
+    for (int i = 0; i < packed.tulips + packed.daisies; ++i) {
+        tablePots[i].landing = std::min(1.0f, tablePots[i].landing + elapsed / 0.75f);
+    }
+}
+
 void drawOrderFlowers() {
     const ShopPoint table = shopPackingTableTop();
-    constexpr float offsets[][2] = {
-        {-0.16f, -0.16f}, {0.16f, -0.16f},
-        {-0.16f, 0.15f}, {0.16f, 0.15f}
-    };
-
     glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_CURRENT_BIT);
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     for (int i = 0; i < packed.tulips + packed.daisies; ++i) {
+        const TablePot& pot = tablePots[i];
+        const float lift = (1.0f - pot.landing) * (1.0f - pot.landing);
         glPushMatrix();
-        glTranslatef(table.x + offsets[i][0], table.y, table.z + offsets[i][1]);
+        glTranslatef(table.x + tableOffsets[i][0] + 0.15f * lift,
+                     table.y + 0.44f * lift,
+                     table.z + tableOffsets[i][1] - 0.23f * lift);
         glScalef(0.49f, 0.49f, 0.49f);
-        drawFlower(i < packed.tulips ? FlowerType::TULIP : FlowerType::DAISY);
+        drawFlower(pot.type);
         glPopMatrix();
     }
     glPopAttrib();
