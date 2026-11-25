@@ -105,43 +105,78 @@ void drawWrapChoices(bool picking) {
     if (picking) glStencilFunc(GL_ALWAYS, 0, 0xff);
 }
 
-void drawPaper(float folded) {
-    const float bottom = 0.057f;
-    const float top = 0.39f - 0.18f * folded;
-    for (int i = 0; i < 8; ++i) {
-        const float a = i * pi / 4.0f;
-        const float b = (i + 1) * pi / 4.0f;
-        const float shade = i % 2 == 0 ? 1.0f : 0.86f;
-        glColor3f(colors[paper][0] * shade, colors[paper][1] * shade, colors[paper][2] * shade);
+void drawPaperLayer(float folded, bool lining) {
+    constexpr int folds = 36;
+    const float* tint = colors[paper];
+    const float tone = lining ? 0.48f : 0.0f;
+    const float phase = lining ? 0.32f : 0.0f;
+    for (int i = 0; i < folds; ++i) {
+        const float shade = 0.92f + 0.08f * std::cos(i * 6.0f * pi / folds + phase);
+        glColor3f((tint[0] * (1 - tone) + 0.98f * tone) * shade,
+                  (tint[1] * (1 - tone) + 0.91f * tone) * shade,
+                  (tint[2] * (1 - tone) + 0.78f * tone) * shade);
         glBegin(GL_QUAD_STRIP);
-        glNormal3f(std::cos((a + b) / 2), 0.55f, std::sin((a + b) / 2));
-        glVertex3f(bottom * std::cos(a), 0.035f, bottom * std::sin(a));
-        glVertex3f(top * std::cos(a), 0.045f + folded * (i % 2 ? 0.23f : 0.34f), top * std::sin(a));
-        glVertex3f(bottom * std::cos(b), 0.035f, bottom * std::sin(b));
-        glVertex3f(top * std::cos(b), 0.045f + folded * (i % 2 ? 0.34f : 0.23f), top * std::sin(b));
+        for (int level = 0; level < 3; ++level) {
+            for (int edge = 1; edge >= 0; --edge) {
+                const float a = 2.0f * pi * (i + edge) / folds;
+                const float x = std::cos(a), z = std::sin(a);
+                const float crease = std::cos(5.0f * a + phase);
+                const float top = 0.35f + folded * ((lining ? 0.166f : 0.193f) - 0.35f + 0.018f * crease);
+                // The front dips below the blooms, with a taller collar behind them.
+                const float collar = 0.325f - 0.073f * z + 0.033f * crease + (lining ? 0.052f : 0.0f);
+                const float waist = (lining ? 0.064f : 0.071f) * folded + 0.12f * (1 - folded);
+                const float radii[] = {0.041f, waist, top};
+                const float heights[] = {0.032f, 0.037f + folded * 0.113f, 0.043f + folded * collar};
+                glNormal3f(x, 0.30f, z);
+                glVertex3f(radii[level] * x, heights[level], radii[level] * z);
+            }
+        }
         glEnd();
     }
+}
+
+void drawPaper(float folded) {
+    drawPaperLayer(folded, false);
+    if (folded > 0.03f) drawPaperLayer(folded, true);
 }
 
 void drawRibbon(float tightened) {
     if (tightened <= 0.0f) return;
     glColor3fv(colors[ribbon]);
     glPushMatrix();
-    glTranslatef(0, 0.147f, 0);
+    glTranslatef(0, 0.150f, 0);
     glRotatef(90, 1, 0, 0);
-    glutSolidTorus(0.012, 0.114, 10, 28);
+    glutSolidTorus(0.017, 0.071, 10, 28);
     glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(0, 0.153f, 0.083f);
+    glScalef(tightened, tightened, tightened);
     for (float side : {-1.0f, 1.0f}) {
+        glBegin(GL_TRIANGLE_FAN);
+        glNormal3f(0, 0, 1);
+        glVertex3f(0, 0, 0.012f);
+        glVertex3f(side * 0.103f, 0.063f, 0.006f);
+        glVertex3f(side * 0.131f, 0.047f, 0.012f);
+        glVertex3f(side * 0.117f, -0.018f, 0.025f);
+        glVertex3f(side * 0.094f, -0.027f, 0.008f);
+        glEnd();
+        glBegin(GL_TRIANGLE_FAN);
+        glNormal3f(0, 0, 1);
+        glVertex3f(side * 0.02f, -0.019f, 0.006f);
+        glVertex3f(side * 0.075f, -0.143f, 0.025f);
+        glVertex3f(side * 0.045f, -0.125f, 0.038f);
+        glVertex3f(side * 0.013f, -0.150f, 0.023f);
+        glEnd();
         glPushMatrix();
-        glTranslatef(side * 0.055f, 0.15f, 0.116f);
-        glRotatef(side * 21.0f, 0, 0, 1);
-        glScalef(tightened * 1.25f, tightened * 0.60f, tightened);
-        glutSolidTorus(0.012, 0.035, 9, 20);
+        glTranslatef(side * 0.074f, 0.022f, 0.014f);
+        glRotatef(side * 18.0f, 0, 0, 1);
+        glScalef(1.40f, 0.78f, 0.5f);
+        glutSolidTorus(0.009, 0.031, 8, 18);
         glPopMatrix();
     }
-    glPushMatrix();
-    glTranslatef(0, 0.15f, 0.120f);
-    glutSolidSphere(0.021, 10, 8);
+    glTranslatef(0, 0, 0.020f);
+    glutSolidSphere(0.025, 12, 8);
     glPopMatrix();
 }
 }
@@ -289,18 +324,32 @@ void drawOrderBouquet() {
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     glDisable(GL_CULL_FACE);
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+    glPushMatrix();
+    glScalef(1.16f, 1.16f, 1.16f);
     drawPaper(folded);
+    // One taller bloom in the back, two staggered side blooms, and a low front bloom.
+    constexpr float bloomPositions[][5] = {
+        {0.0f,   0.138f, -0.060f,  -4.0f,   0.0f},
+        {-0.074f, 0.055f, 0.007f,   5.0f,  13.0f},
+        {0.075f,  0.078f, 0.018f,   8.0f, -14.0f},
+        {0.012f,  0.030f, 0.087f,  14.0f,  -2.0f}
+    };
+    constexpr int bloomOrder[] = {0, 2, 1, 3};
     for (int i = 0; i < flowerCount(); ++i) {
-        const float spread = 1.0f - 0.55f * folded;
+        const float* bloom = bloomPositions[i];
         glPushMatrix();
-        glTranslatef(offsets[i][0] * spread, 0.03f, offsets[i][1] * spread);
-        glRotatef(-offsets[i][1] * 80.0f, 1, 0, 0);
-        glRotatef(-offsets[i][0] * 125.0f, 0, 0, 1);
-        glScalef(0.80f, 0.80f, 0.80f);
-        drawFlower(tablePots[i].type, false);
+        glTranslatef(offsets[i][0] * (1.0f - folded) + bloom[0] * folded,
+                     0.025f + bloom[1] * folded,
+                     offsets[i][1] * (1.0f - folded) + bloom[2] * folded);
+        glRotatef(bloom[3], 1, 0, 0);
+        glRotatef(bloom[4], 0, 0, 1);
+        glRotatef(42.0f * i, 0, 1, 0);
+        glScalef(0.84f, 0.84f, 0.84f);
+        drawFlower(bloomOrder[i] < packed.tulips ? FlowerType::TULIP : FlowerType::DAISY, false);
         glPopMatrix();
     }
     drawRibbon(ease((folded - 0.6f) / 0.4f));
+    glPopMatrix();
     glPopAttrib();
 }
 
@@ -339,6 +388,7 @@ void drawOrderFlowers(bool picking) {
         glTranslatef(table.x + 0.37f * lift + 0.56f * walk - 0.27f * give,
                      table.y + 0.20f * lift - 0.15f * give,
                      table.z - 0.78f * lift - 2.05f * walk - 0.70f * give);
+        glRotatef(24.0f, 0, 1, 0);
         drawOrderBouquet();
         glPopMatrix();
     }
