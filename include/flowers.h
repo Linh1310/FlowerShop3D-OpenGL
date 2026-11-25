@@ -28,6 +28,6 @@ void drawFlowerPot();
 // Ve mot chau hoa theo loai duoc chon
 // type = TULIP: Ve hoa tulip
 // type = DAISY: Ve hoa cuc kim
-void drawFlower(FlowerType type);
+void drawFlower(FlowerType type, bool withPot = true);
 
 #endif

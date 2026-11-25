@@ -13,11 +13,10 @@ g++ -std=c++17 -Iinclude main.cpp src/bezier.cpp src/camera.cpp src/flowers.cpp 
 
 Trong VS Code, dùng **Ctrl+Shift+B** để build nếu thư mục `C:\msys64\ucrt64\bin` đã nằm trong PATH.
 
-1. Bấm chuột trái trực tiếp vào hoa hoặc chậu trên kệ để chọn, rồi bấm **Thêm vào đơn**. Bấm chuột phải vào hoa để chọn và thêm ngay. Cuộn chuột để phóng to hoặc thu nhỏ.
-2. Khách thả tim nếu bạn soạn xong trước khi họ chờ quá 12 giây. Sau 35 giây chờ ở quầy, khách nổi giận, hủy đơn và bỏ về.
-3. Bấm **Giao đơn / Tiễn khách** khi đủ hoa. Bạn cũng có thể bấm **Tiễn khách ra** để hủy một đơn đang soạn. Khi khách cũ đã ra cửa, bấm **Gọi khách vào** để đón khách tiếp theo.
-4. Phím `[` và `]` vẫn chọn chậu. **Enter** thêm hoa hoặc giao đơn đã hoàn tất.
+1. Đọc lời nhắn của khách rồi bấm chuột phải vào hoa trên kệ để thêm. Bạn cũng có thể bấm trái để chọn rồi bấm **Thêm hoa**.
+2. Bấm vào mẫu giấy và cuộn nơ trên bàn hoặc chọn màu tương ứng trên phiếu. Bấm **Gói hoa** khi đã lấy đủ hoa. Giấy sẽ gập lên quanh bó và nhân viên thắt nơ.
+3. Bấm **Giao hoa** khi khách đã tới quầy. Nhân viên mang bó tới giao và khách cầm hoa ra về. Bấm **Gọi khách vào** để tiếp khách mới.
+4. Khách thả tim nếu bạn chuẩn bị đúng trong 22 giây kể từ khi họ tới quầy. Sau 55 giây chờ, họ hủy đơn và rời tiệm.
+5. Bấm **Điều khiển** để mở danh sách nút camera, ánh sáng và chế độ xem. Cuộn chuột để phóng to hoặc thu nhỏ.
 
 Bản demo mở với tường trước ẩn để lộ bàn gói và các kệ. Nhấn **F** để hiện lại tường, biển hiệu và xem cửa tự mở khi khách đi qua.
-
-Khi bạn thêm hoa, nhân viên cúi xuống bàn gói và chậu hạ xuống mặt bàn. Khi đơn đã đủ, khách vẫy tay và nhận túi lúc bạn giao đơn.

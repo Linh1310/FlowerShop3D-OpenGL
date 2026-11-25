@@ -50,18 +50,6 @@ void ball(float x, float y, float z, float width, float height, float depth, Col
     glPopMatrix();
 }
 
-void drawBag() {
-    constexpr Color kraft{0.78f, 0.57f, 0.36f};
-    glPushMatrix();
-    glTranslatef(0.0f, -0.11f, 0.015f);
-    glColor3f(kraft.r, kraft.g, kraft.b);
-    glutSolidTorus(0.012, 0.062, 5, 12);
-    glTranslatef(0.0f, -0.135f, 0.0f);
-    glScalef(0.23f, 0.25f, 0.12f);
-    glutSolidCube(1.0);
-    glPopMatrix();
-}
-
 void drawLeg(float side, float step, const Outfit& clothes) {
     glPushMatrix();
     glTranslatef(side * 0.099f, 0.65f, 0.0f);
@@ -84,15 +72,26 @@ void drawArm(float side, float swing, float reach, float wave, bool bag,
     glTranslatef(0, -0.21f, 0);
     glRotatef(-12.0f - 20.0f * reach - 83.0f * wave, 1, 0, 0);
     ball(0, -0.078f, 0, 0.046f, 0.106f, 0.048f, clothes.skin);
+    if (side < 0) {
+        ball(0, -0.148f, 0, 0.044f, 0.014f, 0.047f, shoes);
+        ball(0, -0.148f, 0.045f, 0.021f, 0.019f, 0.009f, nameTag);
+    }
     glTranslatef(0, -0.183f, 0);
     ball(0, 0, 0, 0.053f, 0.06f, 0.041f, clothes.skin);
-    if (bag) drawBag();
+    if (bag) {
+        glPushMatrix();
+        glTranslatef(0, -0.06f, 0.058f);
+        glRotatef(14, 1, 0, 0);
+        drawOrderBouquet();
+        glPopMatrix();
+    }
     glPopMatrix();
 }
 
-void drawHead(const Outfit& clothes, bool staff, float nod, bool upset) {
+void drawHead(const Outfit& clothes, bool staff, float nod, bool upset, float turn) {
     glPushMatrix();
     glTranslatef(0, 1.31f, 0);
+    glRotatef(turn, 0, 1, 0);
     glRotatef(nod, 1, 0, 0);
     ball(0, 0.145f, 0.012f, 0.145f, 0.169f, 0.133f, clothes.skin);
     ball(0, 0.216f, -0.032f, 0.151f, 0.127f, 0.136f, clothes.hair);
@@ -116,7 +115,7 @@ void drawHead(const Outfit& clothes, bool staff, float nod, bool upset) {
 
 void drawPerson(float x, float z, float heading, float scale, float step, float bob,
                 const Outfit& clothes, bool staff, float reach, float wave, bool bag,
-                bool upset = false) {
+                bool upset = false, float look = 0.0f) {
     glPushMatrix();
     glTranslatef(x, 0.004f + bob, z);
     glRotatef(heading, 0, 1, 0);
@@ -138,7 +137,7 @@ void drawPerson(float x, float z, float heading, float scale, float step, float 
     }
     drawArm(-1, -step * 30.0f, reach, wave, false, clothes);
     drawArm(1, step * (bag ? 9.0f : 30.0f), reach * 0.83f, 0, bag, clothes);
-    drawHead(clothes, staff, 12.0f * reach - 5.0f * wave, upset);
+    drawHead(clothes, staff, 16.0f * reach - 5.0f * wave, upset, look);
     glPopMatrix();
 }
 
@@ -206,10 +205,17 @@ void drawCustomer() {
                                   : travelHeading + (90.0f - travelHeading) * turnToCounter;
     const float step = moving ? std::sin(walkingPhase) : 0.0f;
     const float bob = moving ? 0.044f * std::abs(step) : 0.011f * std::sin(clockTime * 3.5f);
-    const bool wave = (visit == Visit::Waiting && orderComplete()) || visit == Visit::Collecting;
-    const float gesture = wave ? 0.72f + 0.20f * std::sin(clockTime * 10.0f) : 0.0f;
+    const bool waiting = visit == Visit::Waiting;
+    const bool checkingWatch = waiting && orderIsPreparing() &&
+                              waitTime > CUSTOMER_WAIT_LIMIT - 10.0f;
+    const float glance = checkingWatch ? std::max(0.0f, std::sin(clockTime * 2.8f)) : 0.0f;
+    const float gesture = visit == Visit::Collecting ? 0.28f :
+                          (orderComplete() && waiting ? 0.68f + 0.16f * std::sin(clockTime * 8.0f)
+                                                      : 0.58f * glance);
+    const float look = waiting ? -27.0f + 22.0f * std::sin(clockTime * 0.9f) : 0.0f;
+    const float lean = angry ? 0.23f : (orderDelivering() && waiting ? 0.28f : 0.54f * glance);
     drawPerson(x, z, heading, 1.05f, step, bob, visitors[outfitIndex], false,
-               angry ? 0.23f : 0.0f, gesture, hasBag, angry);
+               lean, gesture, hasBag, angry, look);
     drawCustomerReaction(x, z, bob);
 }
 }
@@ -274,7 +280,7 @@ void updatePeople(float elapsed) {
             if (routeProgress >= 1.0f) visit = Visit::Waiting;
             break;
         case Visit::Waiting:
-            if (!orderComplete()) {
+            if (orderIsPreparing()) {
                 waitTime = std::min(CUSTOMER_WAIT_LIMIT, waitTime + elapsed);
                 if (waitTime >= CUSTOMER_WAIT_LIMIT) orderCancel(true);
             }
@@ -299,9 +305,21 @@ void drawPeople() {
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     const ShopPoint table = shopPackingTableTop();
-    const float reach = std::sin(pi * packingTime / 1.12f);
-    drawPerson(table.x + 0.34f, table.z - 0.65f, -28.0f, 1.0f,
-               0.0f, 0.009f * std::sin(clockTime * 3.0f), florist, true, reach, 0.0f, false);
+    const float motion = orderDeliveryMotion();
+    const float out = std::clamp((motion - 0.36f) / 1.72f, 0.0f, 1.0f);
+    const float back = std::clamp((motion - 2.6f) / 1.72f, 0.0f, 1.0f);
+    const float distance = out * out * (3.0f - 2.0f * out) -
+                           back * back * (3.0f - 2.0f * back);
+    const bool walking = (out > 0 && out < 1) || (back > 0 && back < 1);
+    const float step = walking ? std::sin(motion * 13.0f) : 0.0f;
+    float reach = std::sin(pi * packingTime / 1.12f);
+    if (orderDelivering()) reach = std::min(0.83f, motion * 3.0f);
+    const float turn = motion > 2.6f ? -28.0f :
+                      -28.0f - 165.0f * std::clamp(motion / 0.36f, 0.0f, 1.0f);
+    drawPerson(table.x + 0.34f + 0.56f * distance, table.z - 0.65f - 1.83f * distance,
+               turn, 1.0f, step, 0.009f * std::sin(clockTime * 3.0f) +
+                                  0.034f * std::abs(step),
+               florist, true, reach, 0.0f, false);
     drawCustomer();
     glPopAttrib();
 }

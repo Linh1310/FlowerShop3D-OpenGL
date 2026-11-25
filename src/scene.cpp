@@ -254,7 +254,7 @@ void drawFlowerScene(bool picking) {
     }
 }
 
-int scenePotAtPixel(int x, int y) {
+int sceneTargetAtPixel(int x, int y) {
     GLint viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
     if (x < 0 || x >= viewport[2] || y < 0 || y >= viewport[3]) return -1;
@@ -291,7 +291,7 @@ int scenePotAtPixel(int x, int y) {
     applyCamera();
     drawShop(customerDoorAngle());
     drawPeople();
-    drawOrderFlowers();
+    drawOrderFlowers(true);
     drawFlowerScene(true);
     glReadPixels(left, bottom, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, ids);
     glPopMatrix();

@@ -17,20 +17,27 @@ struct Button {
     int x, y, w, h;
     const char* label;
     void (*onClick)();
+    int material = -1;
 };
 
-static const int MAX_BTN = 32;
+static const int MAX_BTN = 40;
 static Button buttons[MAX_BTN];
 static int btnCount = 0;
 static int hoverIdx = -1;
 static int winW = 1000, winH = 700;
 static float uiScale = 1.0f;
 static constexpr int ORDER_W = 264;
-static constexpr int ORDER_H = 318;
+static constexpr int ORDER_H = 453;
 static int orderButtonStart = 0;
+static bool controlsOpen = false;
+
+static void toggleControls() {
+    controlsOpen = !controlsOpen;
+    hoverIdx = -1;
+}
 
 static void addBtn(int col, int row, const char* label, void (*fn)()) {
-    buttons[btnCount++] = {10 + col * 106, 10 + row * 34, 100, 28, label, fn};
+    buttons[btnCount++] = {10 + col * 106, 44 + row * 34, 100, 28, label, fn};
 }
 
 static bool showInfo = true;
@@ -43,6 +50,7 @@ static int buttonX(int i) {
 
 static void buildButtons() {
     if (btnCount > 0) return;
+    buttons[btnCount++] = {10, 10, 131, 28, nullptr, toggleControls};
     addBtn(0, 0, "< Trai",        [] { cameraRotate(-5, 0); });
     addBtn(1, 0, "Phai >",        [] { cameraRotate(+5, 0); });
     addBtn(0, 1, "^ Len",         [] { cameraRotate(0, +5); });
@@ -69,15 +77,20 @@ static void buildButtons() {
     addBtn(1, 10, "An/Hien info", [] { showInfo = !showInfo; });
     addBtn(0, 12, "Nguon hoa", [] { inspectToggleSource(); });
     orderButtonStart = btnCount;
-    buttons[btnCount++] = {14, 221, 147, 29, "Them vao don", orderAddSelected};
-    buttons[btnCount++] = {167, 221, 83, 29, "Dat lai", orderClear};
-    buttons[btnCount++] = {14, 257, 236, 29, nullptr, orderDoorAction};
+    buttons[btnCount++] = {14, 261, 147, 28, "Them hoa", orderAddSelected};
+    buttons[btnCount++] = {167, 261, 83, 28, "Dat lai", orderClear};
+    buttons[btnCount++] = {14, 301, 115, 25, "Giay hong", [] { orderChooseMaterial(WrapMaterial::Pink); }, 0};
+    buttons[btnCount++] = {135, 301, 115, 25, "Giay kraft", [] { orderChooseMaterial(WrapMaterial::Kraft); }, 1};
+    buttons[btnCount++] = {14, 331, 115, 25, "No kem", [] { orderChooseMaterial(WrapMaterial::Cream); }, 2};
+    buttons[btnCount++] = {135, 331, 115, 25, "No xanh", [] { orderChooseMaterial(WrapMaterial::Green); }, 3};
+    buttons[btnCount++] = {14, 367, 236, 29, "Goi hoa", orderWrapBouquet};
+    buttons[btnCount++] = {14, 403, 236, 29, nullptr, orderDoorAction};
 }
 
 void uiReshape(int w, int h) {
     w = std::max(w, 1);
     h = std::max(h, 1);
-    uiScale = std::min({1.0f, w / 720.0f, h / 460.0f});
+    uiScale = std::min({1.0f, w / 720.0f, h / 610.0f});
     winW = static_cast<int>(w / uiScale);
     winH = static_cast<int>(h / uiScale);
     hoverIdx = -1;
@@ -112,55 +125,62 @@ static void drawOrderPanel() {
     drawText(x + 198, 41, line);
 
     glColor3f(0.15f, 0.27f, 0.22f);
-    fillRect(x + 14, 54, 236, 73);
+    fillRect(x + 14, 53, 236, 63);
+    glColor3f(0.99f, 0.82f, 0.68f);
+    drawText(x + 25, 71, orderOccasion());
+    glColor3f(0.94f, 0.92f, 0.85f);
+    drawText(x + 25, 89, orderRequestLine());
+    drawText(x + 25, 106, orderWrapRequest());
+
+    glColor3f(0.15f, 0.27f, 0.22f);
+    fillRect(x + 14, 122, 236, 62);
     glColor3f(0.81f, 0.87f, 0.79f);
-    drawText(x + 26, 71, "Hoa khach dat");
-    drawText(x + 176, 71, "Da chon");
+    drawText(x + 26, 137, "Hoa khach dat");
+    drawText(x + 176, 137, "Da chon");
     glColor3f(0.98f, 0.77f, 0.79f);
-    drawText(x + 26, 94, "Tulip hong");
+    drawText(x + 26, 156, "Tulip hong");
     snprintf(line, sizeof line, "%d / %d", packed.tulips, requested.tulips);
-    drawText(x + 187, 94, line);
+    drawText(x + 187, 156, line);
     glColor3f(1.0f, 0.94f, 0.83f);
-    drawText(x + 26, 114, "Cuc kim");
+    drawText(x + 26, 175, "Cuc kim");
     snprintf(line, sizeof line, "%d / %d", packed.daisies, requested.daisies);
-    drawText(x + 187, 114, line);
+    drawText(x + 187, 175, line);
 
     const int selected = sceneSelectedIndex();
     if (selected < 0) snprintf(line, sizeof line, "Bam vao chau hoa tren ke");
     else snprintf(line, sizeof line, "Chau %d / %d - %s",
                   selected + 1, scenePotCount(),
                   sceneSelectedFlowerType() == 0 ? "Tulip hong" : "Cuc kim");
-    drawText(x + 14, 150, line);
+    drawText(x + 14, 201, line);
     glColor3f(0.77f, 0.85f, 0.76f);
-    drawText(x + 14, 176, orderMessage());
+    drawText(x + 14, 222, orderMessage());
     if (orderComplete()) {
-        drawText(x + 14, 197, "Khach da san sang nhan don.");
-    } else if (customerIsWaiting()) {
+        drawText(x + 14, 244, customerIsWaiting() ? "Khach da san sang nhan hoa."
+                                                 : "Cho khach toi quay de giao hoa.");
+    } else if (customerIsWaiting() && orderIsPreparing()) {
         const float remaining = CUSTOMER_WAIT_LIMIT - customerWaitElapsed();
         snprintf(line, sizeof line, "Khach cho %d giay", static_cast<int>(std::ceil(remaining)));
         if (remaining < 10.0f) glColor3f(1.0f, 0.59f, 0.54f);
-        drawText(x + 14, 197, line);
+        drawText(x + 14, 244, line);
         glColor3f(0.20f, 0.31f, 0.27f);
-        fillRect(x + 14, 204, 236, 5);
+        fillRect(x + 14, 250, 236, 5);
         if (remaining < 10.0f) glColor3f(0.92f, 0.36f, 0.29f);
         else glColor3f(0.59f, 0.78f, 0.51f);
-        fillRect(x + 14, 204, static_cast<int>(236 * remaining / CUSTOMER_WAIT_LIMIT), 5);
-    } else if (customerIsOrdering()) {
-        drawText(x + 14, 197, "Khach dang di vao.");
+        fillRect(x + 14, 250, static_cast<int>(236 * remaining / CUSTOMER_WAIT_LIMIT), 5);
+    } else if (customerIsOrdering() && !customerIsWaiting()) {
+        drawText(x + 14, 244, "Khach dang di vao.");
     } else if (customerCanEnter()) {
-        drawText(x + 14, 197, "Ban co the goi khach moi.");
+        drawText(x + 14, 244, "Ban co the goi khach moi.");
     }
     glColor3f(0.77f, 0.85f, 0.76f);
-    drawText(x + 14, 309, "Trai: Chon chau    Phai: Them nhanh");
+    drawText(x + 14, 450, "Chuot phai them hoa. Bam giay/no tren ban.");
 }
 
 static bool buttonEnabled(int i) {
-    if (i < orderButtonStart) return true;
+    if (i < orderButtonStart) return i == 0 || controlsOpen;
     if (inspectActive()) return false;
     if (buttons[i].onClick == orderDoorAction) return orderDoorEnabled();
-    if (buttons[i].onClick == orderAddSelected || buttons[i].onClick == orderClear)
-        return customerIsOrdering() && !orderComplete();
-    return true;
+    return customerIsOrdering() && orderIsPreparing();
 }
 
 static void drawInfoPanel() {
@@ -250,15 +270,23 @@ void drawUI() {
     glLoadIdentity();
 
     if (!inspectActive()) drawOrderPanel();
+    if (controlsOpen) {
+        glColor4f(0.08f, 0.15f, 0.13f, 0.94f);
+        fillRect(6, 6, 214, 478);
+    }
     for (int i = 0; i < btnCount; i++) {
         const bool orderButton = i >= orderButtonStart;
         if (orderButton && inspectActive()) continue;
+        if (!orderButton && i != 0 && !controlsOpen) continue;
         const Button& b = buttons[i];
         const int x = buttonX(i);
         const bool enabled = buttonEnabled(i);
+        const bool selectedMaterial = b.material >= 0 &&
+                                      orderUsingMaterial(static_cast<WrapMaterial>(b.material));
 
         if (!enabled) glColor3f(0.14f, 0.23f, 0.20f);
         else if (orderButton && (i == hoverIdx || b.onClick == orderAddSelected ||
+                                  b.onClick == orderWrapBouquet ||
                                   (b.onClick == orderDoorAction &&
                                    (orderComplete() || customerCanEnter()))))
             glColor3f(0.69f, 0.41f, 0.34f);
@@ -266,10 +294,15 @@ void drawUI() {
         else if (i == hoverIdx) glColor4f(0.95f, 0.55f, 0.65f, 0.90f);
         else               glColor4f(0.15f, 0.15f, 0.20f, 0.75f);
         fillRect(x, b.y, b.w, b.h);
+        if (b.material >= 0) {
+            glColor3fv(wrapMaterialColor(static_cast<WrapMaterial>(b.material)));
+            fillRect(x + 9, b.y + 7, 12, 11);
+        }
 
-        if (enabled) glColor3f(1, 1, 1);
+        if (selectedMaterial) glColor3f(1.0f, 0.87f, 0.60f);
+        else if (enabled) glColor3f(1, 1, 1);
         else glColor3f(0.53f, 0.63f, 0.57f);
-        if (!orderButton) {
+        if (!orderButton || selectedMaterial) {
             glBegin(GL_LINE_LOOP);
                 glVertex2i(x, b.y);
                 glVertex2i(x + b.w, b.y);
@@ -278,7 +311,9 @@ void drawUI() {
             glEnd();
         }
 
-        const char* label = b.onClick == orderDoorAction ? orderDoorLabel() : b.label;
+        const char* label = b.label;
+        if (i == 0) label = controlsOpen ? "-  Dong dieu khien" : "+  Dieu khien";
+        if (b.onClick == orderDoorAction) label = orderDoorLabel();
         const unsigned char* t = (const unsigned char*)label;
         int tw = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, t);
         glRasterPos2i(x + (b.w - tw) / 2, b.y + b.h / 2 + 5);
@@ -313,7 +348,8 @@ static bool overPanel(int x, int y) {
     const bool orderPanel = x >= orderX() && x < winW - 10 && y >= 10 && y < 10 + ORDER_H;
     const bool infoPanel = showInfo && x >= winW - 310 && x < winW - 10 &&
                            y >= winH - 128 && y < winH - 10;
-    return orderPanel || infoPanel;
+    const bool controlsPanel = controlsOpen && x >= 6 && x < 220 && y >= 6 && y < 484;
+    return orderPanel || infoPanel || controlsPanel;
 }
 
 void onMouse(int button, int state, int x, int y) {
@@ -327,10 +363,16 @@ void onMouse(int button, int state, int x, int y) {
         return;
     }
     if (inspectActive() || overPanel(x, y)) return;
-    const int pot = scenePotAtPixel(x, y);
-    if (pot < 0) return;
-    sceneSelectPot(pot);
-    if (button == GLUT_RIGHT_BUTTON) orderAddSelected();
+    const int target = sceneTargetAtPixel(x, y);
+    if (target < 0) return;
+    if (target >= FIRST_WRAP_TARGET) {
+        const int material = target - FIRST_WRAP_TARGET;
+        if (material < WRAP_MATERIAL_COUNT)
+            orderChooseMaterial(static_cast<WrapMaterial>(material));
+    } else {
+        sceneSelectPot(target);
+        if (button == GLUT_RIGHT_BUTTON) orderAddSelected();
+    }
     glutPostRedisplay();
 }
 

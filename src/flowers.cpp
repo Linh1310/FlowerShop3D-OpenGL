@@ -698,19 +698,7 @@ void drawFlowerPot() {
 // 12. HAM VE HOA CHUNG
 // ========================================
 
-void drawFlower(FlowerType type) {
-
-    // 1. KIEM TRA PHIEN BAN CODE
-    static bool checked = false;
-
-    if (!checked) {
-        printf("DEBUG: FLOWERS.CPP MOI DANG CHAY!\n");
-        fflush(stdout);
-
-        glutSetWindowTitle("FlowerShop3D - COLOR TEST NEW");
-
-        checked = true;
-    }
+void drawFlower(FlowerType type, bool withPot) {
 
     // 2. LUU TRANG THAI OPENGL
     glPushAttrib(
@@ -737,7 +725,7 @@ void drawFlower(FlowerType type) {
     );
 
     // 4. VE CHAU HOA
-    drawFlowerPot();
+    if (withPot) drawFlowerPot();
 
     // 5. VE HOA THEO LOAI
     if (type == FlowerType::TULIP) {
