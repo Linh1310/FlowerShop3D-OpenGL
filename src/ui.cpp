@@ -1,5 +1,6 @@
 #include <GL/freeglut.h>
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include "ui.h"
 #include "camera.h"
@@ -9,6 +10,7 @@
 #include "model3d.h"
 #include "interaction.h"
 #include "order.h"
+#include "people.h"
 #include <cstdio>
 
 struct Button {
@@ -24,6 +26,7 @@ static int hoverIdx = -1;
 static int winW = 1000, winH = 700;
 static float uiScale = 1.0f;
 static constexpr int ORDER_W = 264;
+static constexpr int ORDER_H = 318;
 static int orderButtonStart = 0;
 
 static void addBtn(int col, int row, const char* label, void (*fn)()) {
@@ -66,11 +69,9 @@ static void buildButtons() {
     addBtn(1, 10, "An/Hien info", [] { showInfo = !showInfo; });
     addBtn(0, 12, "Nguon hoa", [] { inspectToggleSource(); });
     orderButtonStart = btnCount;
-    buttons[btnCount++] = {14, 195, 115, 28, "< Chau truoc", [] { sceneSelectStep(-1); }};
-    buttons[btnCount++] = {135, 195, 115, 28, "Chau sau >", [] { sceneSelectStep(+1); }};
-    buttons[btnCount++] = {14, 230, 147, 30, "Them vao don", orderAddSelected};
-    buttons[btnCount++] = {167, 230, 83, 30, "Dat lai", orderClear};
-    buttons[btnCount++] = {14, 267, 236, 30, "Don tiep >", orderNext};
+    buttons[btnCount++] = {14, 221, 147, 29, "Them vao don", orderAddSelected};
+    buttons[btnCount++] = {167, 221, 83, 29, "Dat lai", orderClear};
+    buttons[btnCount++] = {14, 257, 236, 29, nullptr, orderDoorAction};
 }
 
 void uiReshape(int w, int h) {
@@ -100,12 +101,15 @@ static void drawOrderPanel() {
     const FlowerOrder& requested = orderRequested();
     const FlowerOrder& packed = orderPacked();
     glColor4f(0.07f, 0.17f, 0.14f, 0.96f);
-    fillRect(x, 10, ORDER_W, 322);
+    fillRect(x, 10, ORDER_W, ORDER_H);
     glColor3f(0.83f, 0.59f, 0.47f);
     fillRect(x, 10, ORDER_W, 4);
     glColor3f(1.0f, 0.94f, 0.83f);
     snprintf(line, sizeof line, "Soan don hoa #%d", orderNumber());
     drawText(x + 14, 42, line, GLUT_BITMAP_HELVETICA_18);
+    glColor3f(1.0f, 0.65f, 0.70f);
+    snprintf(line, sizeof line, "Tim: %d", customerHearts());
+    drawText(x + 198, 41, line);
 
     glColor3f(0.15f, 0.27f, 0.22f);
     fillRect(x + 14, 54, 236, 73);
@@ -122,21 +126,40 @@ static void drawOrderPanel() {
     drawText(x + 187, 114, line);
 
     const int selected = sceneSelectedIndex();
-    if (selected < 0) snprintf(line, sizeof line, "Chua chon chau");
+    if (selected < 0) snprintf(line, sizeof line, "Bam vao chau hoa tren ke");
     else snprintf(line, sizeof line, "Chau %d / %d - %s",
                   selected + 1, scenePotCount(),
                   sceneSelectedFlowerType() == 0 ? "Tulip hong" : "Cuc kim");
     drawText(x + 14, 150, line);
     glColor3f(0.77f, 0.85f, 0.76f);
     drawText(x + 14, 176, orderMessage());
-    drawText(x + 14, 318, "[ / ]  Chon chau     Enter  Them / don tiep");
+    if (orderComplete()) {
+        drawText(x + 14, 197, "Khach da san sang nhan don.");
+    } else if (customerIsWaiting()) {
+        const float remaining = CUSTOMER_WAIT_LIMIT - customerWaitElapsed();
+        snprintf(line, sizeof line, "Khach cho %d giay", static_cast<int>(std::ceil(remaining)));
+        if (remaining < 10.0f) glColor3f(1.0f, 0.59f, 0.54f);
+        drawText(x + 14, 197, line);
+        glColor3f(0.20f, 0.31f, 0.27f);
+        fillRect(x + 14, 204, 236, 5);
+        if (remaining < 10.0f) glColor3f(0.92f, 0.36f, 0.29f);
+        else glColor3f(0.59f, 0.78f, 0.51f);
+        fillRect(x + 14, 204, static_cast<int>(236 * remaining / CUSTOMER_WAIT_LIMIT), 5);
+    } else if (customerIsOrdering()) {
+        drawText(x + 14, 197, "Khach dang di vao.");
+    } else if (customerCanEnter()) {
+        drawText(x + 14, 197, "Ban co the goi khach moi.");
+    }
+    glColor3f(0.77f, 0.85f, 0.76f);
+    drawText(x + 14, 309, "Trai: Chon chau    Phai: Them nhanh");
 }
 
 static bool buttonEnabled(int i) {
     if (i < orderButtonStart) return true;
     if (inspectActive()) return false;
-    if (buttons[i].onClick == orderNext) return orderComplete();
-    if (buttons[i].onClick == orderAddSelected) return !orderComplete();
+    if (buttons[i].onClick == orderDoorAction) return orderDoorEnabled();
+    if (buttons[i].onClick == orderAddSelected || buttons[i].onClick == orderClear)
+        return customerIsOrdering() && !orderComplete();
     return true;
 }
 
@@ -236,7 +259,9 @@ void drawUI() {
 
         if (!enabled) glColor3f(0.14f, 0.23f, 0.20f);
         else if (orderButton && (i == hoverIdx || b.onClick == orderAddSelected ||
-                                  b.onClick == orderNext)) glColor3f(0.69f, 0.41f, 0.34f);
+                                  (b.onClick == orderDoorAction &&
+                                   (orderComplete() || customerCanEnter()))))
+            glColor3f(0.69f, 0.41f, 0.34f);
         else if (orderButton) glColor3f(0.21f, 0.35f, 0.29f);
         else if (i == hoverIdx) glColor4f(0.95f, 0.55f, 0.65f, 0.90f);
         else               glColor4f(0.15f, 0.15f, 0.20f, 0.75f);
@@ -253,7 +278,8 @@ void drawUI() {
             glEnd();
         }
 
-        const unsigned char* t = (const unsigned char*)b.label;
+        const char* label = b.onClick == orderDoorAction ? orderDoorLabel() : b.label;
+        const unsigned char* t = (const unsigned char*)label;
         int tw = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, t);
         glRasterPos2i(x + (b.w - tw) / 2, b.y + b.h / 2 + 5);
         glutBitmapString(GLUT_BITMAP_HELVETICA_12, t);
@@ -281,16 +307,39 @@ static int hitTest(int x, int y) {
     return -1;
 }
 
+static bool overPanel(int x, int y) {
+    x = static_cast<int>(x / uiScale);
+    y = static_cast<int>(y / uiScale);
+    const bool orderPanel = x >= orderX() && x < winW - 10 && y >= 10 && y < 10 + ORDER_H;
+    const bool infoPanel = showInfo && x >= winW - 310 && x < winW - 10 &&
+                           y >= winH - 128 && y < winH - 10;
+    return orderPanel || infoPanel;
+}
+
 void onMouse(int button, int state, int x, int y) {
-    if (button != GLUT_LEFT_BUTTON || state != GLUT_DOWN) return;
+    if (state != GLUT_DOWN || (button != GLUT_LEFT_BUTTON && button != GLUT_RIGHT_BUTTON)) return;
     int i = hitTest(x, y);
     if (i >= 0) {
-        buttons[i].onClick();
-        glutPostRedisplay();
+        if (button == GLUT_LEFT_BUTTON) {
+            buttons[i].onClick();
+            glutPostRedisplay();
+        }
+        return;
     }
+    if (inspectActive() || overPanel(x, y)) return;
+    const int pot = scenePotAtPixel(x, y);
+    if (pot < 0) return;
+    sceneSelectPot(pot);
+    if (button == GLUT_RIGHT_BUTTON) orderAddSelected();
+    glutPostRedisplay();
 }
 
 void onMouseMove(int x, int y) {
     int i = hitTest(x, y);
     if (i != hoverIdx) { hoverIdx = i; glutPostRedisplay(); }
+}
+
+void onMouseWheel(int, int direction, int, int) {
+    cameraZoom(direction > 0 ? -1.0f : 1.0f);
+    glutPostRedisplay();
 }

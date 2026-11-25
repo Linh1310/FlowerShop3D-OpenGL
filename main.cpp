@@ -36,7 +36,7 @@ static void display() {
     if (inspectActive()) {
         drawInspect(sceneSelectedFlowerType(), sceneSelectedAngle());   // chi ve bong hoa dang chon
     } else {
-        drawShop();
+        drawShop(customerDoorAngle());
         drawFlowerScene();
         drawOrderFlowers();
         drawPeople();
@@ -50,7 +50,7 @@ static void reshape(int w, int h) { cameraReshape(w, h); uiReshape(w, h);   }
 
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL);
     glutInitWindowSize(1000, 700);
     glutCreateWindow("Flower Shop 3D");
 
@@ -68,6 +68,7 @@ int main(int argc, char** argv) {
     glutSpecialFunc(onSpecialKey);
     glutMouseFunc(onMouse);
     glutPassiveMotionFunc(onMouseMove);
+    glutMouseWheelFunc(onMouseWheel);
     previousFrameTime = glutGet(GLUT_ELAPSED_TIME);
     glutTimerFunc(33, animate, 0);
     glutMainLoop();

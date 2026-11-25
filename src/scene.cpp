@@ -1,9 +1,13 @@
 
 #include "scene.h"
+#include "camera.h"
 #include "flowers.h"
+#include "order.h"
+#include "people.h"
 #include "shop.h"
 
 #include <GL/glut.h>
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 
@@ -122,7 +126,7 @@ void drawSelectionRing() {
 // ========================================
 
 // Sap xep cac chau cach deu tren mot tang ke
-void drawRow(const ShelfRow& row) {
+void drawRow(const ShelfRow& row, bool picking) {
 
     // Lay toa do hai vi tri dau va cuoi
     ShopPoint first = shopSlot(row.firstSlot);
@@ -219,7 +223,8 @@ void drawRow(const ShelfRow& row) {
             float g = 1.0f + potGrow[id];
             glScalef(g, g, g);
         }
-        if (id == selectedPot) drawSelectionRing();
+        if (picking) glStencilFunc(GL_ALWAYS, id + 1, 0xff);
+        else if (id == selectedPot) drawSelectionRing();
 
         drawFlower(row.type);
 
@@ -234,7 +239,7 @@ void drawRow(const ShelfRow& row) {
 // 4. VE TAT CA HOA TREN GIA KE
 // ========================================
 
-void drawFlowerScene() {
+void drawFlowerScene(bool picking) {
 
     // Can du 12 slot do shop.cpp cung cap
     if (shopSlotCount() < 12) {
@@ -245,8 +250,68 @@ void drawFlowerScene() {
 
     // Ve lan luot tung hang hoa
     for (int i = 0; i < ROW_COUNT; i++) {
-        drawRow(ROWS[i]);
+        drawRow(ROWS[i], picking);
     }
+}
+
+int scenePotAtPixel(int x, int y) {
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    if (x < 0 || x >= viewport[2] || y < 0 || y >= viewport[3]) return -1;
+    const int px = viewport[0] + x;
+    const int py = viewport[1] + viewport[3] - 1 - y;
+    constexpr int radius = 3;
+    constexpr int diameter = 2 * radius + 1;
+    const int left = std::max(viewport[0], px - radius);
+    const int bottom = std::max(viewport[1], py - radius);
+    const int width = std::min(viewport[0] + viewport[2], px + radius + 1) - left;
+    const int height = std::min(viewport[1] + viewport[3], py + radius + 1) - bottom;
+    GLubyte ids[diameter * diameter]{};
+
+    // The depth test keeps flowers behind walls, shelves, and people from being picked.
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT |
+                 GL_STENCIL_BUFFER_BIT | GL_SCISSOR_BIT);
+    glPushClientAttrib(GL_CLIENT_PIXEL_STORE_BIT);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(left, bottom, width, height);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glStencilMask(0xff);
+    glClearStencil(0);
+    glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilFunc(GL_ALWAYS, 0, 0xff);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+    applyCamera();
+    drawShop(customerDoorAngle());
+    drawPeople();
+    drawOrderFlowers();
+    drawFlowerScene(true);
+    glReadPixels(left, bottom, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, ids);
+    glPopMatrix();
+    glPopClientAttrib();
+    glPopAttrib();
+
+    int closest = -1;
+    int distance = diameter * diameter;
+    for (int sy = 0; sy < height; ++sy) {
+        for (int sx = 0; sx < width; ++sx) {
+            const int id = ids[sy * width + sx];
+            const int dx = left + sx - px;
+            const int dy = bottom + sy - py;
+            if (id > 0 && dx * dx + dy * dy < distance) {
+                closest = id - 1;
+                distance = dx * dx + dy * dy;
+            }
+        }
+    }
+    return closest;
 }
 
 // ========================================

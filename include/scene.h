@@ -9,7 +9,8 @@
 // Ve cac chau hoa tren hai gia ke
 // Moi gia ke co 3 tang trung bay
 // So luong va vi tri hoa duoc xu ly trong scene.cpp
-void drawFlowerScene();
+void drawFlowerScene(bool picking = false);
+int scenePotAtPixel(int x, int y);
 
 // ========================================
 // 2. KHAI BAO HAM IN THONG TIN BO TRI

@@ -7,6 +7,7 @@
 // =====================================================================
 #include "shop.h"
 #include <GL/glut.h>
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -134,10 +135,10 @@ static void drawFrontWall() {
 }
 
 // Cánh cửa quay quanh bản lề bên trái (x = -0.7), mở vào trong
-static void drawDoor() {
+static void drawDoor(float customerDoorAngle) {
     glPushMatrix();
     glTranslatef(-DOOR_W / 2, 0.0f, 4.0f + WALL_T / 2);
-    glRotatef(g_doorAngle, 0, 1, 0);
+    glRotatef(std::max(g_doorAngle, customerDoorAngle), 0, 1, 0);
     box(DOOR_W / 2, DOOR_H / 2, 0, DOOR_W, DOOR_H, 0.06f, C_DARKWOOD);
     // tay nắm
     setColor(C_COUNTER);
@@ -279,7 +280,7 @@ void initShop() {
     addShelfSlots(-4.75f, 0.0f, 90.0f, 3.0f, 2);    // kệ B: 2 tầng x 2 = 4 ô
 }
 
-void drawShop() {
+void drawShop(float customerDoorAngle) {
     glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_CURRENT_BIT |
                  GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_LINE_BIT);
 
@@ -296,7 +297,7 @@ void drawShop() {
     drawLamps();
     if (g_showFrontWall) {
         drawFrontWall();
-        drawDoor();
+        drawDoor(customerDoorAngle);
         // biển hiệu phía ngoài, trên cửa
         boxMM(-1.4f, 1.4f, 2.5f, 3.2f, 4.0f + WALL_T, 4.0f + WALL_T + 0.06f, C_SIGN);
     }

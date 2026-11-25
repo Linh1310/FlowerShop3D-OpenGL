@@ -35,7 +35,7 @@ bool orderComplete() {
 }
 
 void orderAddSelected() {
-    if (inspectActive() || orderComplete()) return;
+    if (inspectActive() || !customerIsOrdering() || orderComplete()) return;
     const int flowerType = sceneSelectedFlowerType();
     if (flowerType < 0) {
         message = "Hay chon mot chau hoa tren ke.";
@@ -56,11 +56,15 @@ void orderAddSelected() {
     };
     ++count;
     staffPackFlower();
-    if (orderComplete()) message = "Da soan xong! Bam Don tiep.";
+    if (orderComplete()) {
+        customerOrderReady();
+        message = "Da soan xong! Bam Giao don.";
+    }
     else message = tulip ? "Da them mot chau tulip." : "Da them mot chau cuc kim.";
 }
 
 void orderClear() {
+    if (!customerIsOrdering() || orderComplete()) return;
     packed = {};
     message = "Da dat lai don. Chon chau de soan lai.";
 }
@@ -70,7 +74,32 @@ void orderNext() {
     customerCollectOrder();
     ++currentOrder;
     packed = {};
-    message = "Don moi da san sang.";
+    message = "Da giao don. Khach dang ra cua.";
+}
+
+void orderCancel(bool timedOut) {
+    if (!customerIsOrdering() || orderComplete()) return;
+    customerDismiss(timedOut);
+    ++currentOrder;
+    packed = {};
+    message = timedOut ? "Het gio! Khach gian, bo ve." : "Da huy don va tien khach.";
+}
+
+bool orderDoorEnabled() { return customerIsOrdering() || customerCanEnter(); }
+
+const char* orderDoorLabel() {
+    if (customerCanEnter()) return "Goi khach vao";
+    if (!customerIsOrdering()) return "Khach dang ra cua...";
+    if (orderComplete()) return "Giao don / Tien khach";
+    return "Tien khach ra";
+}
+
+void orderDoorAction() {
+    if (customerCanEnter()) {
+        customerEnter();
+        message = "Khach moi dang di vao.";
+    } else if (orderComplete()) orderNext();
+    else orderCancel(false);
 }
 
 void updateOrderDisplay(float elapsed) {
