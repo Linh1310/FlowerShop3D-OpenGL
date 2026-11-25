@@ -35,8 +35,9 @@ static const float BOARD_T  = 0.05f;   // độ dày ván kệ
 static GLUquadric*             g_quad = 0;
 static float                   g_doorAngle = 0.0f;
 static bool                    g_doorOpen = false;
-static bool                    g_showFrontWall = true;
+static bool                    g_showFrontWall = false;
 static std::vector<ShopPoint>  g_slots;
+static constexpr ShopPoint PACKING_TABLE_TOP = {2.5f, 0.70f, 2.0f};
 
 static const ShopPoint LAMPS[3] = {
     {-2.0f, 2.7f, 0.5f},
@@ -180,15 +181,39 @@ static void drawCounter() {
 }
 
 static void drawTableAndStools() {
-    // bàn tròn
-    cylinderY(2.5f, 0.0f, 2.0f, 0.05f, 0.65f, C_BLACK);
-    cylinderY(2.5f, 0.65f, 2.0f, 0.50f, 0.05f, C_WOOD);
+    const ShopPoint& table = PACKING_TABLE_TOP;
+    cylinderY(table.x, 0.0f, table.z, 0.05f, table.y - 0.05f, C_BLACK);
+    cylinderY(table.x, table.y - 0.05f, table.z, 0.50f, 0.05f, C_WOOD);
     // 2 ghế đẩu
     for (int i = 0; i < 2; i++) {
         float sx = (i == 0) ? 1.8f : 3.2f;
         cylinderY(sx, 0.0f, 2.0f, 0.04f, 0.40f, C_BLACK);
         cylinderY(sx, 0.40f, 2.0f, 0.18f, 0.05f, C_DARKWOOD);
     }
+}
+
+static void drawPackingDecor() {
+    const float paper[] = {0.92f, 0.76f, 0.52f};
+    const float ribbon[] = {0.72f, 0.31f, 0.39f};
+    const float cream[] = {0.96f, 0.91f, 0.76f};
+    const ShopPoint& table = PACKING_TABLE_TOP;
+
+    // Kraft paper and a ribbon spool at the outer edge of the packing table.
+    glPushMatrix();
+    glTranslatef(table.x - 0.32f, table.y + 0.04f, table.z - 0.17f);
+    glRotatef(90.0f, 1, 0, 0);
+    cylinderY(0, 0, 0, 0.04f, 0.32f, paper);
+    glPopMatrix();
+    cylinderY(table.x + 0.34f, table.y, table.z + 0.12f, 0.062f, 0.075f, ribbon);
+    cylinderY(table.x + 0.34f, table.y + 0.075f, table.z + 0.12f, 0.069f, 0.012f, cream);
+
+    // Two gift boxes beside a small counter sign.
+    box(4.18f, 1.245f, -0.55f, 0.34f, 0.19f, 0.34f, paper);
+    box(4.18f, 1.343f, -0.55f, 0.06f, 0.008f, 0.34f, ribbon);
+    box(4.32f, 1.218f, -0.95f, 0.22f, 0.136f, 0.24f, ribbon);
+    box(4.32f, 1.29f, -0.95f, 0.22f, 0.008f, 0.045f, cream);
+    box(4.15f, 1.32f, -0.12f, 0.62f, 0.34f, 0.058f, C_DARKWOOD);
+    box(4.15f, 1.32f, -0.087f, 0.56f, 0.28f, 0.012f, C_SIGN);
 }
 
 static void drawLamps() {
@@ -267,6 +292,7 @@ void drawShop() {
     drawShelves();
     drawCounter();
     drawTableAndStools();
+    drawPackingDecor();
     drawLamps();
     if (g_showFrontWall) {
         drawFrontWall();
@@ -277,6 +303,7 @@ void drawShop() {
 
     // ---- Phần không dùng ánh sáng: chữ và kính trong suốt ----
     glDisable(GL_LIGHTING);
+    drawStrokeText("BLOOM", 4.15f, 1.28f, -0.078f, 0.00085f, C_SIGNTEXT);
     if (g_showFrontWall) {
         drawStrokeText("FLOWER SHOP", 0.0f, 2.72f, 4.0f + WALL_T + 0.07f,
                        0.0025f, C_SIGNTEXT);
@@ -291,6 +318,8 @@ void drawShop() {
 
     glPopAttrib();
 }
+
+ShopPoint shopPackingTableTop() { return PACKING_TABLE_TOP; }
 
 void shopToggleDoor() {
     g_doorOpen = !g_doorOpen;

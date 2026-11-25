@@ -6,6 +6,7 @@
 #include "shop.h"
 #include "scene.h"
 #include "model3d.h"
+#include "order.h"
 
 static void display() {
         if (inspectActive()) glClearColor(0.08f, 0.08f, 0.12f, 1.0f);   // nen toi cho de nhin luoi
@@ -24,6 +25,7 @@ static void display() {
     } else {
         drawShop();
         drawFlowerScene();
+        drawOrderFlowers();
     }
 
     drawUI();
@@ -51,6 +53,7 @@ int main(int argc, char** argv) {
     glutKeyboardFunc(onKeyboard);
     glutSpecialFunc(onSpecialKey);
     glutMouseFunc(onMouse);
+    glutPassiveMotionFunc(onMouseMove);
     glutMainLoop();
     return 0;
 }

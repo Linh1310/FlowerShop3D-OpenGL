@@ -27,6 +27,7 @@ void initShop();
 // Gọi trong hàm display() của main.cpp. Hàm tự push/pop trạng thái GL
 // nên không làm ảnh hưởng phần code của Mim và Trang.
 void drawShop();
+ShopPoint shopPackingTableTop();
 
 // Tương tác (Trang gắn phím): mở/đóng cửa, ẩn/hiện tường trước (nhìn cắt ngang)
 void shopToggleDoor();

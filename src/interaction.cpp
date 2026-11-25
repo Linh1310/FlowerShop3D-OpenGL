@@ -6,6 +6,7 @@
 #include "shop.h"
 #include "scene.h"
 #include "model3d.h"
+#include "order.h"
 
 void cycleInspectMode() {
     if (!inspectActive() && sceneSelectedIndex() < 0) sceneSelectStep(+1);   // chua chon thi chon chau dau
@@ -23,6 +24,12 @@ void onKeyboard(unsigned char key, int, int) {
         // Chọn chậu trước / sau
         case '[': sceneSelectStep(-1); break;
         case ']': sceneSelectStep(+1); break;
+        case '\r':
+            if (!inspectActive()) {
+                if (orderComplete()) orderNext();
+                else orderAddSelected();
+            }
+            break;
 
         // Xoay chậu đang chọn
         case 'a': case 'A': sceneRotateSelected(-10.0f); break;

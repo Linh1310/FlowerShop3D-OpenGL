@@ -1,4 +1,5 @@
 #include <GL/freeglut.h>
+#include <algorithm>
 #include <cstdlib>
 #include "ui.h"
 #include "camera.h"
@@ -7,6 +8,7 @@
 #include "scene.h"   // bật khi Linh thêm sceneSelectPot / sceneRotateSelected
 #include "model3d.h"
 #include "interaction.h"
+#include "order.h"
 #include <cstdio>
 
 struct Button {
@@ -20,18 +22,21 @@ static Button buttons[MAX_BTN];
 static int btnCount = 0;
 static int hoverIdx = -1;
 static int winW = 1000, winH = 700;
+static float uiScale = 1.0f;
+static constexpr int ORDER_W = 264;
+static int orderButtonStart = 0;
 
 static void addBtn(int col, int row, const char* label, void (*fn)()) {
-    const int W = 100, H = 28, GAP = 6, X0 = 10, Y0 = 10;
-    Button b;
-    b.x = X0 + col * (W + GAP);
-    b.y = Y0 + row * (H + GAP);
-    b.w = W; b.h = H;
-    b.label = label; b.onClick = fn;
-    buttons[btnCount++] = b;
+    buttons[btnCount++] = {10 + col * 106, 10 + row * 34, 100, 28, label, fn};
 }
 
 static bool showInfo = true;
+
+static int orderX() { return winW - ORDER_W - 10; }
+
+static int buttonX(int i) {
+    return buttons[i].x + (i >= orderButtonStart ? orderX() : 0);
+}
 
 static void buildButtons() {
     if (btnCount > 0) return;
@@ -60,19 +65,85 @@ static void buildButtons() {
     addBtn(0, 10, "Ngay/Dem",     [] { toggleDayNight(); });
     addBtn(1, 10, "An/Hien info", [] { showInfo = !showInfo; });
     addBtn(0, 12, "Nguon hoa", [] { inspectToggleSource(); });
+    orderButtonStart = btnCount;
+    buttons[btnCount++] = {14, 195, 115, 28, "< Chau truoc", [] { sceneSelectStep(-1); }};
+    buttons[btnCount++] = {135, 195, 115, 28, "Chau sau >", [] { sceneSelectStep(+1); }};
+    buttons[btnCount++] = {14, 230, 147, 30, "Them vao don", orderAddSelected};
+    buttons[btnCount++] = {167, 230, 83, 30, "Dat lai", orderClear};
+    buttons[btnCount++] = {14, 267, 236, 30, "Don tiep >", orderNext};
 }
 
-void uiReshape(int w, int h) { winW = w; winH = (h > 0) ? h : 1; }
+void uiReshape(int w, int h) {
+    w = std::max(w, 1);
+    h = std::max(h, 1);
+    uiScale = std::min({1.0f, w / 720.0f, h / 460.0f});
+    winW = static_cast<int>(w / uiScale);
+    winH = static_cast<int>(h / uiScale);
+    hoverIdx = -1;
+}
 
-static void drawText(int x, int y, const char* s) {
+static void drawText(int x, int y, const char* s, void* font = GLUT_BITMAP_HELVETICA_12) {
     glRasterPos2i(x, y);
-    glutBitmapString(GLUT_BITMAP_HELVETICA_12, (const unsigned char*)s);
+    glutBitmapString(font, (const unsigned char*)s);
+}
+
+static void fillRect(int x, int y, int w, int h) {
+    glBegin(GL_QUADS);
+        glVertex2i(x, y);     glVertex2i(x + w, y);
+        glVertex2i(x + w, y + h); glVertex2i(x, y + h);
+    glEnd();
+}
+
+static void drawOrderPanel() {
+    const int x = orderX();
+    char line[128];
+    const FlowerOrder& requested = orderRequested();
+    const FlowerOrder& packed = orderPacked();
+    glColor4f(0.07f, 0.17f, 0.14f, 0.96f);
+    fillRect(x, 10, ORDER_W, 322);
+    glColor3f(0.83f, 0.59f, 0.47f);
+    fillRect(x, 10, ORDER_W, 4);
+    glColor3f(1.0f, 0.94f, 0.83f);
+    snprintf(line, sizeof line, "Soan don hoa #%d", orderNumber());
+    drawText(x + 14, 42, line, GLUT_BITMAP_HELVETICA_18);
+
+    glColor3f(0.15f, 0.27f, 0.22f);
+    fillRect(x + 14, 54, 236, 73);
+    glColor3f(0.81f, 0.87f, 0.79f);
+    drawText(x + 26, 71, "Hoa khach dat");
+    drawText(x + 176, 71, "Da chon");
+    glColor3f(0.98f, 0.77f, 0.79f);
+    drawText(x + 26, 94, "Tulip hong");
+    snprintf(line, sizeof line, "%d / %d", packed.tulips, requested.tulips);
+    drawText(x + 187, 94, line);
+    glColor3f(1.0f, 0.94f, 0.83f);
+    drawText(x + 26, 114, "Cuc kim");
+    snprintf(line, sizeof line, "%d / %d", packed.daisies, requested.daisies);
+    drawText(x + 187, 114, line);
+
+    const int selected = sceneSelectedIndex();
+    if (selected < 0) snprintf(line, sizeof line, "Chua chon chau");
+    else snprintf(line, sizeof line, "Chau %d / %d - %s",
+                  selected + 1, scenePotCount(),
+                  sceneSelectedFlowerType() == 0 ? "Tulip hong" : "Cuc kim");
+    drawText(x + 14, 150, line);
+    glColor3f(0.77f, 0.85f, 0.76f);
+    drawText(x + 14, 176, orderMessage());
+    drawText(x + 14, 318, "[ / ]  Chon chau     Enter  Them / don tiep");
+}
+
+static bool buttonEnabled(int i) {
+    if (i < orderButtonStart) return true;
+    if (inspectActive()) return false;
+    if (buttons[i].onClick == orderNext) return orderComplete();
+    if (buttons[i].onClick == orderAddSelected) return !orderComplete();
+    return true;
 }
 
 static void drawInfoPanel() {
     char line[128];
     const int W = 300, H = 118;
-    int x = winW - W - 10, y = 10;
+    int x = winW - W - 10, y = winH - H - 10;
 
     glColor4f(0.0f, 0.0f, 0.0f, 0.6f);
     glBegin(GL_QUADS);
@@ -140,7 +211,7 @@ static void drawInspectPanel() {
 void drawUI() {
     buildButtons();
 
-    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT);   // tự khôi phục đèn, depth, màu
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_COLOR_BUFFER_BIT);
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -155,29 +226,36 @@ void drawUI() {
     glPushMatrix();
     glLoadIdentity();
 
+    if (!inspectActive()) drawOrderPanel();
     for (int i = 0; i < btnCount; i++) {
+        const bool orderButton = i >= orderButtonStart;
+        if (orderButton && inspectActive()) continue;
         const Button& b = buttons[i];
+        const int x = buttonX(i);
+        const bool enabled = buttonEnabled(i);
 
-        if (i == hoverIdx) glColor4f(0.95f, 0.55f, 0.65f, 0.90f);
+        if (!enabled) glColor3f(0.14f, 0.23f, 0.20f);
+        else if (orderButton && (i == hoverIdx || b.onClick == orderAddSelected ||
+                                  b.onClick == orderNext)) glColor3f(0.69f, 0.41f, 0.34f);
+        else if (orderButton) glColor3f(0.21f, 0.35f, 0.29f);
+        else if (i == hoverIdx) glColor4f(0.95f, 0.55f, 0.65f, 0.90f);
         else               glColor4f(0.15f, 0.15f, 0.20f, 0.75f);
-        glBegin(GL_QUADS);
-            glVertex2i(b.x, b.y);
-            glVertex2i(b.x + b.w, b.y);
-            glVertex2i(b.x + b.w, b.y + b.h);
-            glVertex2i(b.x, b.y + b.h);
-        glEnd();
+        fillRect(x, b.y, b.w, b.h);
 
-        glColor3f(1, 1, 1);                          // viền
-        glBegin(GL_LINE_LOOP);
-            glVertex2i(b.x, b.y);
-            glVertex2i(b.x + b.w, b.y);
-            glVertex2i(b.x + b.w, b.y + b.h);
-            glVertex2i(b.x, b.y + b.h);
-        glEnd();
+        if (enabled) glColor3f(1, 1, 1);
+        else glColor3f(0.53f, 0.63f, 0.57f);
+        if (!orderButton) {
+            glBegin(GL_LINE_LOOP);
+                glVertex2i(x, b.y);
+                glVertex2i(x + b.w, b.y);
+                glVertex2i(x + b.w, b.y + b.h);
+                glVertex2i(x, b.y + b.h);
+            glEnd();
+        }
 
         const unsigned char* t = (const unsigned char*)b.label;
         int tw = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, t);
-        glRasterPos2i(b.x + (b.w - tw) / 2, b.y + b.h / 2 + 5);
+        glRasterPos2i(x + (b.w - tw) / 2, b.y + b.h / 2 + 5);
         glutBitmapString(GLUT_BITMAP_HELVETICA_12, t);
     }
 
@@ -192,9 +270,13 @@ void drawUI() {
 }
 
 static int hitTest(int x, int y) {
+    x = static_cast<int>(x / uiScale);
+    y = static_cast<int>(y / uiScale);
     for (int i = 0; i < btnCount; i++) {
         const Button& b = buttons[i];
-        if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return i;
+        const int left = buttonX(i);
+        if (buttonEnabled(i) && x >= left && x < left + b.w &&
+            y >= b.y && y < b.y + b.h) return i;
     }
     return -1;
 }
