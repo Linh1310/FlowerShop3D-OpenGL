@@ -13,9 +13,24 @@
 static const float PI = 3.14159265f;
 
 // ---------- Bảng màu ----------
-static const float C_WALL[3]      = {0.95f, 0.92f, 0.85f};
-static const float C_FLOOR[3]     = {0.55f, 0.55f, 0.58f};
-static const float C_RUG[3]       = {0.55f, 0.33f, 0.25f};
+// Tuong chinh - beige am
+static const float C_WALL[3] = {
+    0.86f, 0.81f, 0.71f
+};
+
+// Tuong sau - xanh sage
+static const float C_BACK_WALL[3] = {
+    0.55f, 0.63f, 0.50f
+};
+// San nha - mau be cat am
+static const float C_FLOOR[3] = {
+    0.78f, 0.74f, 0.66f
+};
+
+// Tham - mau do Noel tram
+static const float C_RUG[3] = {
+    0.53f, 0.25f, 0.23f
+};
 static const float C_WOOD[3]      = {0.76f, 0.60f, 0.42f};
 static const float C_DARKWOOD[3]  = {0.45f, 0.30f, 0.18f};
 static const float C_COUNTER[3]   = {0.86f, 0.72f, 0.52f};
@@ -101,9 +116,29 @@ static void drawFloor() {
 
 static void drawBackAndSideWalls() {
     const float H = SHOP_HEIGHT;
-    boxMM(-5.0f - WALL_T, 5.0f + WALL_T, 0, H, -4.0f - WALL_T, -4.0f, C_WALL); // sau
-    boxMM(-5.0f - WALL_T, -5.0f, 0, H, -4.0f, 4.0f, C_WALL);                    // trái
-    boxMM(5.0f, 5.0f + WALL_T, 0, H, -4.0f, 4.0f, C_WALL);                      // phải
+   // Tuong sau - xanh sage
+boxMM(
+    -5.0f - WALL_T, 5.0f + WALL_T,
+    0, H,
+    -4.0f - WALL_T, -4.0f,
+    C_BACK_WALL
+);
+
+// Tuong trai - beige
+boxMM(
+    -5.0f - WALL_T, -5.0f,
+    0, H,
+    -4.0f, 4.0f,
+    C_WALL
+);
+
+// Tuong phai - beige
+boxMM(
+    5.0f, 5.0f + WALL_T,
+    0, H,
+    -4.0f, 4.0f,
+    C_WALL
+);
 }
 
 // Tường trước: ghép từ nhiều khối để chừa lỗ cửa ra vào và 2 cửa sổ
