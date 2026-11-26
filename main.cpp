@@ -1,6 +1,7 @@
 #include <GL/freeglut.h>
 #include "ui.h"  
 #include "camera.h"
+#include "christmas.h"
 #include "lighting.h"
 #include "interaction.h"
 #include "shop.h"
@@ -17,6 +18,7 @@ static void animate(int) {
     previousFrameTime = now;
     updatePeople(elapsed);
     updateOrderDisplay(elapsed);
+    updateSnow(elapsed);
     if (!inspectActive()) glutPostRedisplay();
     glutTimerFunc(33, animate, 0);
 }
@@ -40,6 +42,7 @@ static void display() {
         drawFlowerScene();
         drawOrderFlowers();
         drawPeople();
+        drawSnow();
     }
 
     drawUI();

@@ -110,10 +110,75 @@ static void glassPane(float x0, float x1, float y0, float y1, float z) {
 // =====================================================================
 //  Các thành phần của cửa hàng
 // =====================================================================
+static void rugOval(float x, float z, float rx, float rz, float y,
+                    const float color[3], float tilt = 0.0f) {
+    const float c = std::cos(tilt), s = std::sin(tilt);
+    setColor(color);
+    glNormal3f(0, 1, 0);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(x, y, z);
+    for (int i = 0; i <= 28; ++i) {
+        const float angle = -2.0f * PI * i / 28.0f;
+        const float dx = rx * std::cos(angle);
+        const float dz = rz * std::sin(angle);
+        glVertex3f(x + dx * c - dz * s, y, z + dx * s + dz * c);
+    }
+    glEnd();
+}
+
+static void rugAntlerBranch(float x0, float z0, float x1, float z1,
+                            float radius, const float color[3]) {
+    const float dx = x1 - x0, dz = z1 - z0;
+    const float length = std::sqrt(dx * dx + dz * dz);
+    const float offsetX = -dz * radius / length, offsetZ = dx * radius / length;
+    constexpr float y = 0.033f;
+    setColor(color);
+    glNormal3f(0, 1, 0);
+    glBegin(GL_QUADS);
+    glVertex3f(x0 - offsetX, y, z0 - offsetZ);
+    glVertex3f(x0 + offsetX, y, z0 + offsetZ);
+    glVertex3f(x1 + offsetX, y, z1 + offsetZ);
+    glVertex3f(x1 - offsetX, y, z1 - offsetZ);
+    glEnd();
+    rugOval(x1, z1, radius, radius, y, color);
+}
+
+static void drawReindeerRug() {
+    constexpr float antlers[] = {0.88f, 0.67f, 0.41f};
+    constexpr float caramel[] = {0.56f, 0.32f, 0.19f};
+    constexpr float earLining[] = {0.81f, 0.47f, 0.36f};
+    constexpr float muzzle[] = {0.92f, 0.72f, 0.48f};
+    constexpr float eyes[] = {0.085f, 0.042f, 0.039f};
+    constexpr float nose[] = {0.70f, 0.035f, 0.09f};
+    constexpr float glint[] = {0.98f, 0.90f, 0.74f};
+
+    glPushMatrix();
+    glTranslatef(-1.0f, 0, 2.0f);
+    for (float side : {-1.0f, 1.0f}) {
+        rugAntlerBranch(side * 0.31f, -0.27f, side * 0.47f, -0.76f, 0.053f, antlers);
+        rugAntlerBranch(side * 0.47f, -0.76f, side * 0.64f, -1.14f, 0.043f, antlers);
+        rugAntlerBranch(side * 0.43f, -0.64f, side * 0.25f, -0.97f, 0.041f, antlers);
+        rugAntlerBranch(side * 0.50f, -0.81f, side * 0.82f, -0.93f, 0.041f, antlers);
+        rugOval(side * 0.55f, -0.19f, 0.31f, 0.132f, 0.034f, caramel, side * -0.33f);
+        rugOval(side * 0.63f, -0.214f, 0.182f, 0.066f, 0.035f, earLining, side * -0.33f);
+    }
+    rugOval(0, 0.15f, 0.48f, 0.57f, 0.036f, caramel);
+    rugOval(0, 0.43f, 0.35f, 0.265f, 0.037f, muzzle);
+    for (float side : {-1.0f, 1.0f}) {
+        rugOval(side * 0.202f, 0.14f, 0.043f, 0.061f, 0.038f, eyes);
+        rugOval(side * 0.202f - 0.012f, 0.119f, 0.013f, 0.015f, 0.039f, glint);
+        rugOval(side * 0.30f, 0.30f, 0.067f, 0.035f, 0.038f, earLining);
+    }
+    rugOval(0, 0.41f, 0.143f, 0.11f, 0.039f, nose);
+    rugOval(-0.041f, 0.384f, 0.038f, 0.020f, 0.040f, glint);
+    glPopMatrix();
+}
+
 static void drawFloor() {
     boxMM(-5.0f, 5.0f, -0.05f, 0.0f, -4.0f, 4.0f, C_FLOOR);
     // thảm/bục trang trí phía trước
     boxMM(-3.0f, 1.0f, 0.0f, 0.03f, 0.6f, 3.4f, C_RUG);
+    drawReindeerRug();
 }
 
 static void drawBackAndSideWalls() {

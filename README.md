@@ -21,6 +21,6 @@ Script build và mở `flower_shop_christmas.exe`. Bạn cũng có thể nhấn 
 2. Bấm vào mẫu giấy và cuộn nơ trên bàn hoặc chọn màu tương ứng trên phiếu. Bấm **Gói hoa** khi đã lấy đủ hoa. Giấy sẽ gập lên quanh bó và nhân viên thắt nơ.
 3. Bấm **Giao hoa** khi khách đã tới quầy. Nhân viên mang bó tới giao và khách cầm hoa ra về. Bấm **Gọi khách vào** để tiếp khách mới.
 4. Khách thả tim nếu bạn chuẩn bị đúng trong 22 giây kể từ khi họ tới quầy. Sau 55 giây chờ, họ hủy đơn và rời tiệm.
-5. Giữ và kéo chuột trái trên cảnh 3D để xoay cửa hàng. Cuộn chuột để phóng to hoặc thu nhỏ. Bấm **Điều khiển** để mở các nút camera, ánh sáng và chế độ xem.
+5. Giữ và kéo chuột trái trên cảnh 3D để xoay cửa hàng. Cuộn chuột để phóng to hoặc thu nhỏ. Bấm **Điều khiển** để mở các nút camera, ánh sáng, chế độ xem và **Tuyết rơi**.
 
 Bản demo mở với tường trước ẩn để lộ bàn gói và các kệ. Nhấn **F** để hiện lại tường, biển hiệu và xem cửa tự mở khi khách đi qua.

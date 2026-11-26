@@ -5,4 +5,9 @@
 // x, z: vi tri cua cay trong cua hang
 void drawChristmasDecor(float x, float z);
 
+bool snowIsEnabled();
+void toggleSnow();
+void updateSnow(float elapsed);
+void drawSnow();
+
 #endif

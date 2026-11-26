@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include "ui.h"
 #include "camera.h"
+#include "christmas.h"
 #include "lighting.h"
 #include "shop.h"
 #include "scene.h"   // bật khi Linh thêm sceneSelectPot / sceneRotateSelected
@@ -80,6 +81,7 @@ static void buildButtons() {
     addBtn(0, 10, "Ngay/Dem",     [] { toggleDayNight(); });
     addBtn(1, 10, "An/Hien info", [] { showInfo = !showInfo; });
     addBtn(0, 12, "Nguon hoa", [] { inspectToggleSource(); });
+    addBtn(1, 12, nullptr, toggleSnow);
     orderButtonStart = btnCount;
     buttons[btnCount++] = {14, 261, 147, 28, "Them hoa", orderAddSelected};
     buttons[btnCount++] = {167, 261, 83, 28, "Dat lai", orderClear};
@@ -317,6 +319,7 @@ void drawUI() {
 
         const char* label = b.label;
         if (i == 0) label = controlsOpen ? "-  Dong dieu khien" : "+  Dieu khien";
+        if (b.onClick == toggleSnow) label = snowIsEnabled() ? "Tuyet roi: Bat" : "Tuyet roi: Tat";
         if (b.onClick == orderDoorAction) label = orderDoorLabel();
         const unsigned char* t = (const unsigned char*)label;
         int tw = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, t);

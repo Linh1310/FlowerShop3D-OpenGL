@@ -2,6 +2,8 @@
 #include "flowers.h"
 
 #include <GL/glut.h>
+#include <cmath>
+#include <cstdint>
 
 // ========================================
 // 1. THIET LAP MAU SAC
@@ -428,5 +430,57 @@ void drawChristmasDecor(float x, float z) {
     glPopMatrix();
 
     // Khoi phuc trang thai OpenGL
+    glPopAttrib();
+}
+
+namespace {
+bool snowEnabled = false;
+float snowTime = 0.0f;
+constexpr int snowflakeCount = 168;
+
+float snowSeed(int flake, int offset) {
+    std::uint32_t value = static_cast<std::uint32_t>(flake * 6 + offset + 1);
+    value = (value ^ (value >> 16)) * 0x7feb352du;
+    value = (value ^ (value >> 15)) * 0x846ca68bu;
+    value ^= value >> 16;
+    return static_cast<float>(value >> 16) / 65536.0f;
+}
+}
+
+bool snowIsEnabled() { return snowEnabled; }
+
+void toggleSnow() { snowEnabled = !snowEnabled; }
+
+void updateSnow(float elapsed) {
+    if (snowEnabled) snowTime += elapsed;
+}
+
+void drawSnow() {
+    if (!snowEnabled) return;
+    glPushAttrib(GL_ENABLE_BIT | GL_CURRENT_BIT | GL_POINT_BIT |
+                 GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    glDisable(GL_LIGHTING);
+    glEnable(GL_BLEND);
+    glEnable(GL_POINT_SMOOTH);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+
+    constexpr float fallHeight = 4.55f;
+    for (int group = 0; group < 3; ++group) {
+        glPointSize(2.6f + group * 1.45f);
+        glColor4f(0.94f, 0.97f, 1.0f, 0.57f + group * 0.14f);
+        glBegin(GL_POINTS);
+        for (int i = group; i < snowflakeCount; i += 3) {
+            const float speed = 0.32f + snowSeed(i, 0) * 0.46f;
+            const float fall = std::fmod(snowTime * speed + snowSeed(i, 1) * fallHeight, fallHeight);
+            const float phase = snowSeed(i, 2) * 6.2831853f;
+            const float sway = std::sin(snowTime * 0.85f + phase) * 0.24f;
+            glVertex3f(-4.86f + snowSeed(i, 3) * 9.72f + sway,
+                       0.08f + fallHeight - fall,
+                       -3.85f + snowSeed(i, 4) * 8.46f +
+                       std::cos(snowTime * 0.64f + phase) * 0.14f);
+        }
+        glEnd();
+    }
     glPopAttrib();
 }
