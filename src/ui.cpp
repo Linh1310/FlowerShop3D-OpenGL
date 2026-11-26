@@ -30,6 +30,10 @@ static constexpr int ORDER_W = 264;
 static constexpr int ORDER_H = 453;
 static int orderButtonStart = 0;
 static bool controlsOpen = false;
+static bool sceneMouseHeld = false;
+static bool orbiting = false;
+static int lastMouseX = 0;
+static int lastMouseY = 0;
 
 static void toggleControls() {
     controlsOpen = !controlsOpen;
@@ -345,23 +349,15 @@ static int hitTest(int x, int y) {
 static bool overPanel(int x, int y) {
     x = static_cast<int>(x / uiScale);
     y = static_cast<int>(y / uiScale);
-    const bool orderPanel = x >= orderX() && x < winW - 10 && y >= 10 && y < 10 + ORDER_H;
+    const bool orderPanel = !inspectActive() && x >= orderX() && x < winW - 10 &&
+                            y >= 10 && y < 10 + ORDER_H;
     const bool infoPanel = showInfo && x >= winW - 310 && x < winW - 10 &&
                            y >= winH - 128 && y < winH - 10;
     const bool controlsPanel = controlsOpen && x >= 6 && x < 220 && y >= 6 && y < 484;
     return orderPanel || infoPanel || controlsPanel;
 }
 
-void onMouse(int button, int state, int x, int y) {
-    if (state != GLUT_DOWN || (button != GLUT_LEFT_BUTTON && button != GLUT_RIGHT_BUTTON)) return;
-    int i = hitTest(x, y);
-    if (i >= 0) {
-        if (button == GLUT_LEFT_BUTTON) {
-            buttons[i].onClick();
-            glutPostRedisplay();
-        }
-        return;
-    }
+static void pickScene(int x, int y, bool add) {
     if (inspectActive() || overPanel(x, y)) return;
     const int target = sceneTargetAtPixel(x, y);
     if (target < 0) return;
@@ -371,8 +367,47 @@ void onMouse(int button, int state, int x, int y) {
             orderChooseMaterial(static_cast<WrapMaterial>(material));
     } else {
         sceneSelectPot(target);
-        if (button == GLUT_RIGHT_BUTTON) orderAddSelected();
+        if (add) orderAddSelected();
     }
+    glutPostRedisplay();
+}
+
+void onMouse(int button, int state, int x, int y) {
+    if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN && !sceneMouseHeld) {
+        if (hitTest(x, y) < 0) pickScene(x, y, true);
+        return;
+    }
+    if (button != GLUT_LEFT_BUTTON) return;
+    if (state == GLUT_DOWN) {
+        sceneMouseHeld = false;
+        orbiting = false;
+        const int control = hitTest(x, y);
+        if (control >= 0) {
+            buttons[control].onClick();
+            glutPostRedisplay();
+        } else if (!overPanel(x, y)) {
+            sceneMouseHeld = true;
+            lastMouseX = x;
+            lastMouseY = y;
+        }
+    } else if (state == GLUT_UP && sceneMouseHeld) {
+        onMouseDrag(x, y);
+        sceneMouseHeld = false;
+        if (!orbiting && hitTest(x, y) < 0) pickScene(x, y, false);
+    }
+}
+
+void onMouseDrag(int x, int y) {
+    if (!sceneMouseHeld) return;
+    const int dx = x - lastMouseX;
+    const int dy = y - lastMouseY;
+    if (!orbiting && std::abs(dx) < 5 && std::abs(dy) < 5) return;
+    orbiting = true;
+    lastMouseX = x;
+    lastMouseY = y;
+    hoverIdx = -1;
+    constexpr float degreesPerPixel = 0.28f;
+    cameraRotate(-dx * degreesPerPixel, dy * degreesPerPixel);
     glutPostRedisplay();
 }
 

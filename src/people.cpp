@@ -13,11 +13,11 @@ struct Outfit {
 };
 
 constexpr Color shoes{0.17f, 0.12f, 0.11f};
-constexpr Color apron{0.20f, 0.43f, 0.33f};
-constexpr Color apronPocket{0.29f, 0.53f, 0.39f};
+constexpr Color santaRed{0.77f, 0.055f, 0.09f};
+constexpr Color santaFur{0.99f, 0.94f, 0.83f};
 constexpr Color nameTag{0.99f, 0.78f, 0.45f};
 constexpr Outfit florist{{0.87f, 0.58f, 0.43f}, {0.20f, 0.12f, 0.10f},
-                         {0.97f, 0.84f, 0.70f}, {0.26f, 0.28f, 0.28f}};
+                         santaRed, {0.56f, 0.048f, 0.075f}};
 constexpr Outfit visitors[] = {
     {{0.98f, 0.71f, 0.54f}, {0.30f, 0.16f, 0.10f}, {0.42f, 0.54f, 0.78f}, {0.29f, 0.35f, 0.49f}},
     {{0.61f, 0.37f, 0.27f}, {0.15f, 0.10f, 0.10f}, {0.82f, 0.41f, 0.50f}, {0.34f, 0.30f, 0.47f}},
@@ -50,7 +50,7 @@ void ball(float x, float y, float z, float width, float height, float depth, Col
     glPopMatrix();
 }
 
-void drawLeg(float side, float step, const Outfit& clothes) {
+void drawLeg(float side, float step, const Outfit& clothes, bool staff) {
     glPushMatrix();
     glTranslatef(side * 0.099f, 0.65f, 0.0f);
     glRotatef(-step * 27.0f, 1, 0, 0);
@@ -58,12 +58,16 @@ void drawLeg(float side, float step, const Outfit& clothes) {
     glTranslatef(0, -0.29f, 0);
     glRotatef(std::max(0.0f, -step) * 36.0f, 1, 0, 0);
     ball(0, -0.14f, 0, 0.063f, 0.17f, 0.063f, clothes.pants);
+    if (staff) {
+        ball(0, -0.23f, 0, 0.066f, 0.088f, 0.069f, shoes);
+        ball(0, -0.184f, 0, 0.068f, 0.024f, 0.071f, santaFur);
+    }
     ball(0, -0.294f, 0.054f, 0.072f, 0.056f, 0.12f, shoes);
     glPopMatrix();
 }
 
 void drawArm(float side, float swing, float reach, float wave, bool bag,
-             const Outfit& clothes) {
+             const Outfit& clothes, bool staff) {
     glPushMatrix();
     glTranslatef(side * 0.205f, 1.13f, 0);
     glRotatef(side * (11.0f + 34.0f * wave), 0, 0, 1);
@@ -71,8 +75,10 @@ void drawArm(float side, float swing, float reach, float wave, bool bag,
     ball(0, -0.095f, 0, 0.065f, 0.135f, 0.066f, clothes.shirt);
     glTranslatef(0, -0.21f, 0);
     glRotatef(-12.0f - 20.0f * reach - 83.0f * wave, 1, 0, 0);
-    ball(0, -0.078f, 0, 0.046f, 0.106f, 0.048f, clothes.skin);
-    if (side < 0) {
+    ball(0, -0.078f, 0, 0.050f, 0.106f, 0.051f, staff ? santaRed : clothes.skin);
+    if (staff) {
+        ball(0, -0.157f, 0.003f, 0.055f, 0.029f, 0.056f, santaFur);
+    } else if (side < 0) {
         ball(0, -0.148f, 0, 0.044f, 0.014f, 0.047f, shoes);
         ball(0, -0.148f, 0.045f, 0.021f, 0.019f, 0.009f, nameTag);
     }
@@ -96,7 +102,19 @@ void drawHead(const Outfit& clothes, bool staff, float nod, bool upset, float tu
     ball(0, 0.145f, 0.012f, 0.145f, 0.169f, 0.133f, clothes.skin);
     ball(0, 0.216f, -0.032f, 0.151f, 0.127f, 0.136f, clothes.hair);
     ball(-0.057f, 0.239f, 0.074f, 0.105f, 0.051f, 0.071f, clothes.hair);
-    if (staff) ball(0, 0.268f, -0.133f, 0.092f, 0.081f, 0.078f, clothes.hair);
+    if (staff) {
+        ball(0, 0.098f, 0.111f, 0.104f, 0.084f, 0.053f, santaFur);
+        ball(0, 0.049f, 0.104f, 0.077f, 0.075f, 0.048f, santaFur);
+        ball(0, 0.278f, -0.005f, 0.171f, 0.047f, 0.153f, santaFur);
+        glColor3f(santaRed.r, santaRed.g, santaRed.b);
+        glPushMatrix();
+        glTranslatef(0.01f, 0.289f, -0.005f);
+        glRotatef(-28.0f, 0, 0, 1);
+        glRotatef(-90.0f, 1, 0, 0);
+        glutSolidCone(0.143, 0.245, 20, 8);
+        glPopMatrix();
+        ball(0.125f, 0.507f, -0.005f, 0.058f, 0.058f, 0.058f, santaFur);
+    }
     for (float side : {-1.0f, 1.0f}) {
         ball(side * 0.143f, 0.137f, 0.004f, 0.025f, 0.039f, 0.023f, clothes.skin);
         ball(side * 0.05f, 0.157f, 0.135f, 0.016f, 0.021f, 0.009f, shoes);
@@ -109,7 +127,7 @@ void drawHead(const Outfit& clothes, bool staff, float nod, bool upset, float tu
         }
     }
     ball(0, 0.125f, 0.143f, 0.022f, 0.023f, 0.023f, clothes.skin);
-    ball(0, 0.084f, 0.131f, 0.034f, 0.007f, 0.008f, {0.58f, 0.26f, 0.22f});
+    if (!staff) ball(0, 0.084f, 0.131f, 0.034f, 0.007f, 0.008f, {0.58f, 0.26f, 0.22f});
     glPopMatrix();
 }
 
@@ -120,8 +138,8 @@ void drawPerson(float x, float z, float heading, float scale, float step, float 
     glTranslatef(x, 0.004f + bob, z);
     glRotatef(heading, 0, 1, 0);
     glScalef(scale, scale, scale);
-    drawLeg(-1, step, clothes);
-    drawLeg(1, -step, clothes);
+    drawLeg(-1, step, clothes, staff);
+    drawLeg(1, -step, clothes, staff);
 
     glTranslatef(0, 0.68f, 0);
     glRotatef(14.0f * reach, 1, 0, 0);
@@ -130,13 +148,16 @@ void drawPerson(float x, float z, float heading, float scale, float step, float 
     ball(0, 0.965f, 0.004f, 0.23f, 0.30f, 0.127f, clothes.shirt);
     ball(0, 1.271f, 0.012f, 0.067f, 0.079f, 0.064f, clothes.skin);
     if (staff) {
-        ball(0, 0.84f, 0.084f, 0.184f, 0.248f, 0.073f, apron);
-        ball(0, 1.031f, 0.105f, 0.136f, 0.136f, 0.051f, apron);
-        ball(0.018f, 0.839f, 0.152f, 0.077f, 0.061f, 0.023f, apronPocket);
-        ball(-0.055f, 1.080f, 0.149f, 0.045f, 0.022f, 0.013f, nameTag);
+        ball(0, 0.914f, 0.043f, 0.220f, 0.209f, 0.127f, santaRed);
+        ball(0, 0.716f, 0.025f, 0.175f, 0.037f, 0.107f, santaFur);
+        ball(0, 0.855f, 0.033f, 0.224f, 0.046f, 0.133f, shoes);
+        ball(0, 0.853f, 0.165f, 0.054f, 0.042f, 0.018f, nameTag);
+        ball(0, 0.853f, 0.181f, 0.030f, 0.022f, 0.007f, shoes);
+        ball(0, 1.065f, 0.122f, 0.023f, 0.153f, 0.020f, santaFur);
+        ball(0, 1.201f, 0.025f, 0.122f, 0.037f, 0.082f, santaFur);
     }
-    drawArm(-1, -step * 30.0f, reach, wave, false, clothes);
-    drawArm(1, step * (bag ? 9.0f : 30.0f), reach * 0.83f, 0, bag, clothes);
+    drawArm(-1, -step * 30.0f, reach, wave, false, clothes, staff);
+    drawArm(1, step * (bag ? 9.0f : 30.0f), reach * 0.83f, 0, bag, clothes, staff);
     drawHead(clothes, staff, 16.0f * reach - 5.0f * wave, upset, look);
     glPopMatrix();
 }

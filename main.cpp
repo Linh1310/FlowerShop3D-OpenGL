@@ -67,6 +67,7 @@ int main(int argc, char** argv) {
     glutKeyboardFunc(onKeyboard);
     glutSpecialFunc(onSpecialKey);
     glutMouseFunc(onMouse);
+    glutMotionFunc(onMouseDrag);
     glutPassiveMotionFunc(onMouseMove);
     glutMouseWheelFunc(onMouseWheel);
     previousFrameTime = glutGet(GLUT_ELAPSED_TIME);

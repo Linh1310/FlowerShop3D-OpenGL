@@ -14,7 +14,7 @@ g++ -std=c++17 -Iinclude main.cpp ^
     src/bezier.cpp src/camera.cpp src/christmas.cpp src/flowers.cpp src/interaction.cpp ^
     src/lighting.cpp src/model3d.cpp src/order.cpp src/people.cpp ^
     src/scene.cpp src/shop.cpp src/ui.cpp ^
-    -o flower_shop_wrapping.exe -lfreeglut -lopengl32 -lglu32
+    -o flower_shop_christmas.exe -lfreeglut -lopengl32 -lglu32
 if errorlevel 1 (
     popd
     exit /b 1
@@ -25,7 +25,7 @@ if /i "%~1"=="--build-only" (
     exit /b 0
 )
 
-flower_shop_wrapping.exe
+flower_shop_christmas.exe
 set "demo_exit=%errorlevel%"
 popd
 exit /b %demo_exit%

@@ -235,27 +235,7 @@ void drawRow(const ShelfRow& row, bool picking) {
     }
 }
 
-} // namespace
-
-// ========================================
-// 4. VE TAT CA HOA TREN GIA KE
-// ========================================
-
-void drawFlowerScene(bool picking) {
-
-    // Kiem tra du 12 slot do shop.cpp cung cap
-    if (shopSlotCount() < 12) {
-        return;
-    }
-
-    potCounter = 0;
-    // Ve lan luot tung hang hoa tren ke
-    for (int i = 0; i < ROW_COUNT; i++) {
-        drawRow(ROWS[i], picking);
-    }
-    // Floor displays can occlude a selectable pot but do not inherit its picking ID.
-    if (picking) glStencilFunc(GL_ALWAYS, 0, 0xff);
-
+void drawFloorDisplays() {
     // ====================================
     // CAU TRUC DU LIEU CHO CHAU HOA LON
     // ====================================
@@ -341,6 +321,32 @@ void drawFlowerScene(bool picking) {
    drawFloorFoliagePot();
 
    glPopMatrix();
+}
+
+} // namespace
+
+void drawFlowerScene(bool picking) {
+    if (shopSlotCount() < 12) return;
+
+    potCounter = 0;
+    for (const ShelfRow& row : ROWS) drawRow(row, picking);
+
+    // Decorations occlude selectable pots without inheriting their picking ID.
+    if (picking) glStencilFunc(GL_ALWAYS, 0, 0xff);
+
+    // Static decorations are reused across camera motion and picking passes.
+    static const GLuint display = glGenLists(1);
+    static bool compiled = false;
+    if (display == 0) {
+        drawFloorDisplays();
+    } else if (compiled) {
+        glCallList(display);
+    } else {
+        glNewList(display, GL_COMPILE_AND_EXECUTE);
+        drawFloorDisplays();
+        glEndList();
+        compiled = true;
+    }
 }
 
 int sceneTargetAtPixel(int x, int y) {
