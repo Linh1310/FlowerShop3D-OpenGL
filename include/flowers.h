@@ -30,4 +30,11 @@ void drawFlowerPot();
 // type = DAISY: Ve hoa cuc kim
 void drawFlower(FlowerType type, bool withPot = true);
 
+// Ve chau hoa lon gom 5 bong hoa, dung de trung bay duoi san
+void drawFloorFlowerCluster(FlowerType type);
+
+// Ve chau cay la trang tri, khong co hoa
+void drawFloorFoliagePot();
+
 #endif
+

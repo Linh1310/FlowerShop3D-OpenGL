@@ -11,7 +11,7 @@ if errorlevel 1 (
 )
 
 g++ -std=c++17 -Iinclude main.cpp ^
-    src/bezier.cpp src/camera.cpp src/flowers.cpp src/interaction.cpp ^
+    src/bezier.cpp src/camera.cpp src/christmas.cpp src/flowers.cpp src/interaction.cpp ^
     src/lighting.cpp src/model3d.cpp src/order.cpp src/people.cpp ^
     src/scene.cpp src/shop.cpp src/ui.cpp ^
     -o flower_shop_wrapping.exe -lfreeglut -lopengl32 -lglu32

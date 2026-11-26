@@ -1,10 +1,12 @@
 
 #include "scene.h"
 #include "camera.h"
+#include "christmas.h"
 #include "flowers.h"
 #include "order.h"
 #include "people.h"
 #include "shop.h"
+
 
 #include <GL/glut.h>
 #include <algorithm>
@@ -241,17 +243,104 @@ void drawRow(const ShelfRow& row, bool picking) {
 
 void drawFlowerScene(bool picking) {
 
-    // Can du 12 slot do shop.cpp cung cap
+    // Kiem tra du 12 slot do shop.cpp cung cap
     if (shopSlotCount() < 12) {
         return;
     }
 
-        potCounter = 0;    // danh so lai chau moi frame
-
-    // Ve lan luot tung hang hoa
+    potCounter = 0;
+    // Ve lan luot tung hang hoa tren ke
     for (int i = 0; i < ROW_COUNT; i++) {
         drawRow(ROWS[i], picking);
     }
+    // Floor displays can occlude a selectable pot but do not inherit its picking ID.
+    if (picking) glStencilFunc(GL_ALWAYS, 0, 0xff);
+
+    // ====================================
+    // CAU TRUC DU LIEU CHO CHAU HOA LON
+    // ====================================
+
+    struct FloorPot {
+        float x;
+        float z;
+        FlowerType type;
+    };
+
+    // ====================================
+    // 1. VE 5 CHAU TULIP LON SAT TUONG SAU
+    // ====================================
+
+    const FloorPot FLOOR_TULIPS[] = {
+        {0.82f, -3.68f, FlowerType::TULIP},
+        {1.43f, -3.68f, FlowerType::TULIP},
+        {2.04f, -3.68f, FlowerType::TULIP},
+        {2.65f, -3.68f, FlowerType::TULIP},
+        {3.26f, -3.68f, FlowerType::TULIP}
+    };
+
+    const int TULIP_COUNT =
+        sizeof(FLOOR_TULIPS) / sizeof(FLOOR_TULIPS[0]);
+
+    for (int i = 0; i < TULIP_COUNT; i++) {
+
+        glPushMatrix();
+
+        glTranslatef(
+            FLOOR_TULIPS[i].x,
+            0.0f,
+            FLOOR_TULIPS[i].z
+        );
+
+        drawFloorFlowerCluster(FLOOR_TULIPS[i].type);
+
+        glPopMatrix();
+    }
+
+    // ====================================
+    // 2. VE 5 CHAU DAISY LON BEN TRAI
+    // ====================================
+
+    const FloorPot FLOOR_DAISIES[] = {
+        {-4.55f, 1.78f, FlowerType::DAISY},
+        {-4.55f, 2.26f, FlowerType::DAISY},
+        {-4.55f, 2.74f, FlowerType::DAISY},
+        {-4.55f, 3.22f, FlowerType::DAISY},
+        {-4.55f, 3.70f, FlowerType::DAISY}
+    };
+
+    const int DAISY_COUNT =
+        sizeof(FLOOR_DAISIES) / sizeof(FLOOR_DAISIES[0]);
+
+    for (int i = 0; i < DAISY_COUNT; i++) {
+
+        glPushMatrix();
+
+        glTranslatef(
+            FLOOR_DAISIES[i].x,
+            0.0f,
+            FLOOR_DAISIES[i].z
+        );
+
+        drawFloorFlowerCluster(FLOOR_DAISIES[i].type);
+
+        glPopMatrix();
+    }
+
+    // Trang tri Noel tai khoang trong giua hai ke
+    drawChristmasDecor(-4.15f, -3.35f);
+
+    // Cay la lon canh quay thu ngan
+   glPushMatrix();
+
+   glTranslatef(
+      4.25f,
+      0.0f,
+      0.55f
+  );
+
+   drawFloorFoliagePot();
+
+   glPopMatrix();
 }
 
 int sceneTargetAtPixel(int x, int y) {

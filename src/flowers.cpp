@@ -553,6 +553,75 @@ void drawTulip() {
 }
 
 // ========================================
+// VE 5 BONG TULIP TRONG CUNG MOT CHAU
+// ========================================
+
+void drawTulipCluster() {
+
+    // Vi tri 5 bong tulip trong chau
+    const float offsetX[5] = {
+         0.0f, -0.043f,  0.043f, -0.043f,  0.043f
+    };
+
+    const float offsetZ[5] = {
+         0.0f, -0.038f, -0.038f, 0.038f, 0.038f
+    };
+
+    // Kich thuoc theo chieu ngang va chieu sau
+    const float scaleXZ[5] = {
+        0.58f, 0.54f, 0.54f, 0.54f, 0.54f
+    };
+
+    // Kich thuoc theo chieu cao
+    // Bong giua cao hon cac bong xung quanh
+    const float scaleY[5] = {
+        0.96f, 0.82f, 0.86f, 0.82f, 0.86f
+    };
+
+    // Goc xoay cua tung bong
+    const float angles[5] = {
+        0.0f, 35.0f, 110.0f, 215.0f, 300.0f
+    };
+
+    const float SOIL_TOP_Y = 0.141f;
+    const float STEM_BASE_Y = 0.14f;
+
+    // Ve lan luot 5 bong tulip
+    for (int i = 0; i < 5; i++) {
+
+        glPushMatrix();
+
+        // Can chinh goc than hoa cham mat dat trong chau
+        float baseY = SOIL_TOP_Y
+                    - STEM_BASE_Y * scaleY[i];
+
+        glTranslatef(
+            offsetX[i],
+            baseY,
+            offsetZ[i]
+        );
+
+        // Xoay cac bong theo cac huong khac nhau
+        glRotatef(
+            angles[i],
+            0, 1, 0
+        );
+
+        // Dieu chinh kich thuoc tung bong
+        glScalef(
+            scaleXZ[i],
+            scaleY[i],
+            scaleXZ[i]
+        );
+
+        // Ve mot bong tulip
+        drawTulip();
+
+        glPopMatrix();
+    }
+}
+
+// ========================================
 // 10. VE HOA CUC KIM MAU TRANG
 // ========================================
 
@@ -728,14 +797,313 @@ void drawFlower(FlowerType type, bool withPot) {
     if (withPot) drawFlowerPot();
 
     // 5. VE HOA THEO LOAI
+    // 5. VE HOA THEO LOAI
     if (type == FlowerType::TULIP) {
         drawTulip();
     }
-    else if (type == FlowerType::DAISY) {
-        drawChrysanthemum();
-    }
+     else if (type == FlowerType::DAISY) {
+       drawChrysanthemum();
+  }
 
     // 6. KHOI PHUC TRANG THAI OPENGL
+    glPopMatrix();
+    glPopAttrib();
+}
+
+// ========================================
+// VE CHAU HOA LON GOM 5 BONG
+// DUNG DE TRUNG BAY DUOI SAN
+// ========================================
+
+void drawFloorFlowerCluster(FlowerType type) {
+
+    // Chi ho tro Tulip va Daisy
+    if (type != FlowerType::TULIP &&
+        type != FlowerType::DAISY) {
+        return;
+    }
+
+    // Luu trang thai OpenGL
+    glPushAttrib(
+        GL_ENABLE_BIT |
+        GL_LIGHTING_BIT |
+        GL_CURRENT_BIT |
+        GL_POLYGON_BIT
+    );
+
+    glPushMatrix();
+
+    // Cau hinh hien thi hoa
+    glEnable(GL_NORMALIZE);
+    glEnable(GL_LIGHTING);
+    glDisable(GL_COLOR_MATERIAL);
+    glDisable(GL_CULL_FACE);
+
+    glLightModeli(
+        GL_LIGHT_MODEL_TWO_SIDE,
+        GL_TRUE
+    );
+
+    // ====================================
+    // 1. VE CHAU HOA LON
+    // ====================================
+
+    const float POT_SCALE = 2.2f;
+
+    glPushMatrix();
+
+    glScalef(
+        POT_SCALE,
+        POT_SCALE,
+        POT_SCALE
+    );
+
+    drawFlowerPot();
+
+    glPopMatrix();
+
+    // Chieu cao mat dat sau khi phong to chau
+    const float SOIL_TOP_Y = 0.141f * POT_SCALE;
+
+    // Vi tri bat dau cua than hoa trong mo hinh goc
+    const float STEM_BASE_Y = 0.14f;
+
+    // ====================================
+    // 2. VI TRI 5 BONG HOA
+    // ====================================
+
+    // Bong giua va bon bong xung quanh
+    // Vi tri 5 bong: 1 bong giua, 4 bong xung quanh
+    const float offsetX[5] = {
+     0.0f,
+    -0.095f,
+     0.095f,
+    -0.095f,
+     0.095f
+};
+
+const float offsetZ[5] = {
+     0.0f,
+    -0.060f,
+    -0.060f,
+     0.060f,
+     0.060f
+};
+
+    // Goc xoay cua tung bong
+    const float angles[5] = {
+    0.0f,
+    25.0f,
+    110.0f,
+    205.0f,
+    290.0f
+};
+
+    // Dieu chinh chieu cao tung bong
+    const float tulipScaleY[5] = {
+        0.98f, 0.85f, 0.90f, 0.85f, 0.90f
+    };
+
+    const float daisyScaleY[5] = {
+        0.82f, 0.73f, 0.78f, 0.73f, 0.78f
+    };
+
+    // Thu nho theo chieu ngang de 5 bong
+    // khong bi chen qua sat nhau
+    const float flowerScaleXZ =
+        (type == FlowerType::TULIP)
+        ? 0.55f
+        : 0.38f;
+
+    // ====================================
+    // 3. VE 5 BONG HOA TRONG CUNG CHAU
+    // ====================================
+
+    for (int i = 0; i < 5; i++) {
+
+        float scaleY =
+            (type == FlowerType::TULIP)
+            ? tulipScaleY[i]
+            : daisyScaleY[i];
+
+        // Dua goc than hoa len dung mat dat
+        float baseY =
+            SOIL_TOP_Y - STEM_BASE_Y * scaleY;
+
+        glPushMatrix();
+
+        // Bo tri tung bong trong chau
+        glTranslatef(
+            offsetX[i],
+            baseY,
+            offsetZ[i]
+        );
+
+        // Xoay huong tung bong
+        glRotatef(
+            angles[i],
+            0, 1, 0
+        );
+
+        // Dieu chinh kich thuoc tung bong
+        glScalef(
+            flowerScaleXZ,
+            scaleY,
+            flowerScaleXZ
+        );
+
+        // Ve loai hoa duoc chon
+        if (type == FlowerType::TULIP) {
+            drawTulip();
+        }
+        else {
+            drawChrysanthemum();
+        }
+
+        glPopMatrix();
+    }
+
+    // Khoi phuc trang thai
+    glPopMatrix();
+    glPopAttrib();
+}
+
+// ========================================
+// VE CHAU CAY LA LON TRANG TRI
+// ========================================
+
+void drawFloorFoliagePot() {
+
+    // Luu trang thai OpenGL
+    glPushAttrib(
+        GL_ENABLE_BIT |
+        GL_LIGHTING_BIT |
+        GL_CURRENT_BIT |
+        GL_POLYGON_BIT
+    );
+
+    glPushMatrix();
+
+    glEnable(GL_NORMALIZE);
+    glEnable(GL_LIGHTING);
+    glDisable(GL_COLOR_MATERIAL);
+    glDisable(GL_CULL_FACE);
+
+    glLightModeli(
+        GL_LIGHT_MODEL_TWO_SIDE,
+        GL_TRUE
+    );
+
+    // ====================================
+    // 1. VE CHAU DAT NUNG LON
+    // ====================================
+
+    const float POT_SCALE = 1.8f;
+
+    glPushMatrix();
+
+    glScalef(
+        POT_SCALE,
+        POT_SCALE,
+        POT_SCALE
+    );
+
+    drawFlowerPot();
+
+    glPopMatrix();
+
+    // ====================================
+    // 2. VE THAN CAY CHINH
+    // ====================================
+
+    setMaterial(0.10f, 0.30f, 0.13f);
+
+    cylinderY(
+        0.018f,
+        0.012f,
+        0.85f,
+        0.24f
+    );
+
+    // ====================================
+    // 3. TAO HINH DANG LA
+    // ====================================
+
+    const PetalProfile leaf = {
+        {0, 0, 0},
+        {0, 0.25f, 0.018f},
+        {0, 0.62f, 0.055f},
+        {0, 0.90f, 0.012f},
+        0.105f,
+        0.035f,
+        20,
+        8
+    };
+
+    // Vi tri bat dau cua 8 la
+    const float baseY[8] = {
+        0.24f, 0.24f,
+        0.32f, 0.32f,
+        0.42f, 0.42f,
+        0.50f, 0.50f
+    };
+
+    // Huong xoay quanh than
+    const float angleY[8] = {
+        0, 45, 90, 135,
+        180, 225, 270, 315
+    };
+
+    // Do nghieng cua tung la
+    const float tiltZ[8] = {
+        48, -48,
+        42, -42,
+        34, -34,
+        18, -18
+    };
+
+    // ====================================
+    // 4. VE 8 LA XOE QUANH THAN
+    // ====================================
+
+    for (int i = 0; i < 8; i++) {
+
+        glPushMatrix();
+
+        // Dua la den dung vi tri
+        glTranslatef(
+            0,
+            baseY[i],
+            0
+        );
+
+        // Xoay la quanh than
+        glRotatef(
+            angleY[i],
+            0, 1, 0
+        );
+
+        // Tao do nghieng
+        glRotatef(
+            tiltZ[i],
+            0, 0, 1
+        );
+
+        // Xen ke cac sac do xanh
+        if (i % 2 == 0) {
+            setMaterial(0.10f, 0.40f, 0.18f);
+        }
+        else {
+            setMaterial(0.16f, 0.52f, 0.22f);
+        }
+
+        // Dung be mat la bang Bezier
+        drawBezierPetal(leaf);
+
+        glPopMatrix();
+    }
+
+    // Khoi phuc trang thai
     glPopMatrix();
     glPopAttrib();
 }
